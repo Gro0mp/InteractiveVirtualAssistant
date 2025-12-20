@@ -1,16 +1,17 @@
 # Interactive Virtual Assistant
 
 An immersive 3D virtual assistant powered by AI, featuring real-time conversation, text-to-speech, dynamic facial expressions, and animated poses.
+<img width="2855" height="1442" alt="image" src="https://github.com/user-attachments/assets/e07865f9-1776-4d1c-8b8e-c1a134729c87" />
 
 ![Virtual Assistant Demo](https://via.placeholder.com/800x400?text=Virtual+Assistant+Demo)
 
 ## Features
 
 - **3D Animated Character** - Fully rigged character model with procedural breathing and blinking
-- **Real-time Chat** - WebSocket-based communication for instant responses
-- **Text-to-Speech** - AI-generated voice responses with synchronized lip movements
+- **Real-time Chat** - WebSocket-based communication for responses
+- **Text-to-Speech** - AI-generated voice responses with Google Cloud TTS Chirp Voices
 - **Dynamic Expressions** - Context-aware facial expressions (happy, sad, thinking, etc.)
-- **Multiple Poses** - Character poses that adapt to conversation context
+- **Multiple Poses** - Character poses that adapt to conversation context (more coming soon...)
 - **HDRI Environments** - Beautiful lighting with customizable backgrounds
 
 ## Architecture
@@ -22,7 +23,7 @@ This project consists of two Docker containers that work together:
 │                 │◄──────────────────────────►│                 │
 │  Frontend       │                            │  Backend        │
 │  (React + R3F)  │         REST API           │  (Spring Boot)  │
-│  Port: 3000     │◄──────────────────────────►│  Port: 8080     │
+│  Port: 5173     │◄──────────────────────────►│  Port: 8080     │
 │                 │                            │                 │
 └─────────────────┘                            └─────────────────┘
 ```
@@ -34,7 +35,7 @@ This project consists of two Docker containers that work together:
 - STOMP.js for WebSocket communication
 - Leva for debug controls
 
-### Backend Stack
+### Backend Stack (Please consult the backend repo for instructions on how to properly set up)
 - Spring Boot
 - WebSocket (STOMP protocol)
 - AI integration for response generation
@@ -53,8 +54,8 @@ This project consists of two Docker containers that work together:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/virtual-assistant.git
-cd virtual-assistant
+git clone https://github.com/Gro0mp/InteractiveVirtualAssistant
+cd InteractiveVirtualAssistant
 ```
 
 ### 2. Build Docker Images
@@ -84,7 +85,7 @@ docker-compose up -d
 
 Once both containers are running:
 
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8080
 - **WebSocket**: ws://localhost:8080/websocket
 
@@ -92,7 +93,7 @@ Once both containers are running:
 
 ### Basic Interaction
 
-1. Open your browser to `http://localhost:3000`
+1. Open your browser to `http://localhost:5173`
 2. The virtual assistant will appear in a 3D environment
 3. Type your message in the chat box at the bottom
 4. Press Enter or click Send to submit
@@ -111,7 +112,7 @@ The application supports guest sessions without authentication:
 
 ### Debug Controls
 
-Press the `H` key to toggle the Leva debug panel, which allows you to:
+Press the Leva debug panel, which allows you to:
 - Manually control character poses
 - Adjust facial expressions
 - Modify breathing and blinking parameters
@@ -119,86 +120,6 @@ Press the `H` key to toggle the Leva debug panel, which allows you to:
 - Adjust camera and shadow properties
 
 ## Configuration
-
-### Environment Variables
-
-**Frontend** (`.env` in frontend directory):
-```env
-REACT_APP_WS_URL=ws://localhost:8080/websocket
-REACT_APP_API_URL=http://localhost:8080
-```
-
-**Backend** (`.env` in backend directory):
-```env
-SERVER_PORT=8080
-WEBSOCKET_ALLOWED_ORIGINS=http://localhost:3000
-AI_API_KEY=your_ai_api_key
-TTS_API_KEY=your_tts_api_key
-```
-
-### Docker Compose Configuration
-
-The `docker-compose.yml` file defines both services:
-
-```yaml
-version: '3.8'
-services:
-  backend:
-    build: ./backend
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-```
-
-## Project Structure
-
-```
-virtual-assistant/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── ChatbotSection/
-│   │   │       ├── audioControls/
-│   │   │       │   └── TTSControls.jsx
-│   │   │       ├── chatControls/
-│   │   │       │   ├── MessageList.jsx
-│   │   │       │   ├── MessageBox.jsx
-│   │   │       │   └── Header.jsx
-│   │   │       └── scene/
-│   │   │           ├── Scene.jsx
-│   │   │           ├── Model.jsx
-│   │   │           └── ModernRoom.jsx
-│   │   ├── pages/
-│   │   │   └── ChatBotBeta.jsx
-│   │   └── App.js
-│   ├── public/
-│   │   ├── models/
-│   │   └── hdris/
-│   ├── Dockerfile
-│   └── package.json
-│
-├── backend/
-│   ├── src/
-│   │   └── main/
-│   │       └── java/
-│   │           └── com/yourpackage/
-│   │               ├── controller/
-│   │               ├── service/
-│   │               ├── model/
-│   │               └── config/
-│   ├── Dockerfile
-│   └── pom.xml
-│
-└── docker-compose.yml
-```
 
 ## Features Breakdown
 
@@ -300,34 +221,6 @@ Both containers support hot reload during development:
 - Frontend: Changes to `.jsx` files automatically reload
 - Backend: Use Spring DevTools for automatic restart
 
-### Adding New Poses
-
-1. Export pose animation from Blender with `_A` suffix
-2. Add to character model GLB file
-3. Update pose options in `Model.jsx`:
-```javascript
-const { pose } = useControls('Poses', {
-    pose: {
-        value: 'Neutral_A',
-        options: {
-            Neutral: 'Neutral_A',
-            YourNewPose: 'YourNewPose_A',
-        },
-    },
-})
-```
-
-### Adding New Expressions
-
-1. Create morph target in Blender
-2. Export with character model
-3. Add control in `Model.jsx`:
-```javascript
-const morphControls = useControls('Shape Keys', {
-    'Your Expression': { value: 0, min: 0, max: 1, step: 0.01 },
-})
-```
-
 ## API Reference
 
 ### WebSocket Endpoints
@@ -406,8 +299,6 @@ For issues and questions:
 
 ## Roadmap
 
-- [ ] User authentication and persistent chat history
-- [ ] Voice input (speech-to-text)
 - [ ] Multiple character models
 - [ ] Custom environment creation
 - [ ] Mobile app version
@@ -417,4 +308,4 @@ For issues and questions:
 
 ---
 
-**Important**: This application requires both Docker containers (frontend and backend) to be running simultaneously for full functionality. The frontend alone will not work without the backend WebSocket server.
+**Important**: This application requires both Docker containers (frontend and backend) to be running simultaneously for full functionality. The frontend alone will not work without the backend WebSocket server. If you just want to see the model functionality, the backend is not necessary.
