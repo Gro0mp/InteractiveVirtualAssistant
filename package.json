@@ -10,7 +10,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "dockerbuild": "docker compose up --build --force-recreate",
+    "dockertag": "docker tag gro0mpgithubio-web:latest dennisw342/virtual-assistant-frontend:latest",
+    "dockerpush": "docker push dennisw342/virtual-assistant-frontend:latest"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

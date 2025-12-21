@@ -1,11 +1,11 @@
-import { Canvas, useLoader } from '@react-three/fiber';
-import { Environment, OrbitControls, ContactShadows } from '@react-three/drei';
+import {Canvas, useLoader, useThree} from '@react-three/fiber';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { Leva, useControls } from 'leva';
 import * as THREE from 'three';
 
 import Model from './Model.jsx';
 import ModernRoom from './ModernRoom.jsx';
+import {useEffect} from "react";
 
 /* ---------------- HDRI MAP ---------------- */
 
@@ -31,6 +31,28 @@ function HDRISphere({ y = -1.2, hdri }) {
     );
 }
 
+/* ---------- CAMERA CONTROLLER ---------- */
+
+function CameraController({ fov, position, rotation }) {
+    const { camera } = useThree();
+
+    useEffect(() => {
+        camera.fov = fov;
+        camera.updateProjectionMatrix();
+    }, [fov, camera]);
+
+    useEffect(() => {
+        camera.position.set(position[0], position[1], position[2]);
+    }, [position, camera]);
+
+    useEffect(() => {
+        camera.rotation.set(rotation[0], rotation[1], rotation[2]);
+    }, [rotation, camera]);
+
+    return null;
+}
+
+
 /* ---------------- SCENE ---------------- */
 
 export function Scene({ isSpeaking = false, pose = null, expressions = null }) {
@@ -43,7 +65,12 @@ export function Scene({ isSpeaking = false, pose = null, expressions = null }) {
         shadowBlur,
         shadowScale,
         camFov,
-        modelY,
+        camX,
+        camY,
+        camZ,
+        camRotX,
+        camRotY,
+        camRotZ,
     } = useControls('Scene Controls', {
         hdri: {
             value: 'outdoors',
@@ -62,9 +89,16 @@ export function Scene({ isSpeaking = false, pose = null, expressions = null }) {
         shadowBlur: { value: 2.5, min: 0, max: 10, step: 0.1 },
         shadowScale: { value: 10, min: 1, max: 30, step: 1 },
 
-        camFov: { value: 60, min: 30, max: 90, step: 1 },
+        camFov: { value: 35, min: 30, max: 90, step: 1 },
+        camX: { value: 4.5, min: -20, max: 20, step: 0.5 },
+        camY: { value: 7.5, min: -20, max: 20, step: 0.5 },
+        camZ: { value: 10, min: -20, max: 20, step: 0.5 },
 
-        modelY: { value: 0, min: -1, max: 1, step: 0.01 },
+        camRotX: { value: 0, min: -Math.PI, max: Math.PI, step: 0.01 },
+        camRotY: { value: 0.5, min: -Math.PI, max: Math.PI, step: 0.01 },
+        camRotZ: { value: 0, min: -Math.PI, max: Math.PI, step: 0.01 },
+
+
     });
 
     return (
@@ -76,49 +110,47 @@ export function Scene({ isSpeaking = false, pose = null, expressions = null }) {
                 shadows
                 dpr={[1, 2]}
                 camera={{
-                    position: [0, 2, 3],
-                    fov: camFov }}
+                    position: [8, 10, 16],
+                    fov: camFov.value }}
             >
                 {/* HDRI LIGHTING */}
                 <Environment
                     files={backgrounds.get(hdri)}
                     intensity={envIntensity}
-                    blur={envBlur}
+                    blur={envBlur.value}
                 />
 
                 {/* VISUAL HDRI */}
                 <HDRISphere
                     key={hdri}
                     hdri={hdri}
-                    y={sphereY}
+                    y={sphereY.value}
                 />
 
                 {/* CONTACT SHADOWS */}
                 <ContactShadows
                     position={[0, 0.01, 0]}
-                    opacity={shadowOpacity}
-                    scale={shadowScale}
-                    blur={shadowBlur}
+                    opacity={shadowOpacity.value}
+                    scale={shadowScale.value}
+                    blur={shadowBlur.value}
                     far={4}
+                />
+
+                {/* CAMERA CONTROLLER */}
+                <CameraController
+                    fov={camFov}
+                    position={[camX, camY, camZ]}
+                    rotation={[camRotX, camRotY, camRotZ]}
                 />
 
                 {/* MODEL - Pass props from chatbot */}
                 <Model
-                    position={[0, modelY, 0]}
-                    castShadow
                     isSpeaking={isSpeaking}
                     poseFromChat={pose}
                     morphsFromChat={expressions}
                 />
                 <ModernRoom />
 
-                {/* CAMERA */}
-                <OrbitControls
-                    target={[0, 1, 0]}
-                    maxPolarAngle={Math.PI / 2}
-                    minPolarAngle={Math.PI / 3}
-                    enablePan={false}
-                />
             </Canvas>
         </div>
     );

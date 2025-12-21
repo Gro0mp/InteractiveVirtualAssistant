@@ -87,6 +87,11 @@ export default function Model({ isSpeaking = false, poseFromChat = null, morphsF
     }, [scene, animations])
 
     // --- LEVA GUI ---
+    // Debug mode control
+    const { debugMode } = useControls('Debug', {
+        debugMode: { value: false, label: 'Enable GUI Control (Override Props)' },
+    })
+
     const { pose } = useControls('Poses', {
         pose: {
             value: 'Neutral_A',
@@ -98,7 +103,7 @@ export default function Model({ isSpeaking = false, poseFromChat = null, morphsF
                 ThumbsUp: 'ThumbsUp_A',
             },
         },
-    })
+    }, { collapsed: !debugMode })
 
     const { breathing, breathStrength, breathSpeed } = useControls('Breathing', {
         breathing: true,
@@ -122,13 +127,15 @@ export default function Model({ isSpeaking = false, poseFromChat = null, morphsF
         'Mouth - Happy': { value: 0, min: 0, max: 1, step: 0.01 },
         'Mouth - Sad': { value: 0, min: 0, max: 1, step: 0.01 },
         'Mouth - A': { value: 0, min: 0, max: 1, step: 0.01 },
-        'Key 9': { value: 0, min: 0, max: 1, step: 0.01 },
-        'Key 10': { value: 0, min: 0, max: 1, step: 0.01 },
-    })
+    }, { collapsed: !debugMode })
 
     // --- POSE TRANSITION (from chat or GUI) ---
     useEffect(() => {
-        const targetPose = poseFromChat || pose
+        // In debug mode, use GUI controls. Otherwise, use props or default to Neutral
+        let targetPose = debugMode ? pose : (poseFromChat || 'Neutral_A')
+
+        console.log('Pose transition triggered:', { debugMode, guiPose: pose, poseFromChat, targetPose })
+
         const next = actions.current[targetPose]
         if (!next || next === current.current) return
 
@@ -139,7 +146,7 @@ export default function Model({ isSpeaking = false, poseFromChat = null, morphsF
         }
 
         current.current = next
-    }, [pose, poseFromChat])
+    }, [pose, poseFromChat, debugMode])
 
     // --- UPDATE LOOP FOR BREATHING, BLINKING & MORPH TARGETS ---
     useFrame((state, delta) => {
@@ -209,8 +216,8 @@ export default function Model({ isSpeaking = false, poseFromChat = null, morphsF
         if (headMesh.current && headMesh.current.morphTargetInfluences) {
             const dict = headMesh.current.morphTargetDictionary
 
-            // Use morphs from chat if provided, otherwise use GUI controls
-            const activeMorphs = morphsFromChat || morphControls
+            // In debug mode, use GUI controls. Otherwise, use props or default to 0
+            const activeMorphs = debugMode ? morphControls : (morphsFromChat || {})
 
             Object.keys(morphControls).forEach((key) => {
                 const index = dict[key]
@@ -227,7 +234,7 @@ export default function Model({ isSpeaking = false, poseFromChat = null, morphsF
                         value = Math.max(value, blinkCurve)
                     }
 
-                    // Override Mouth - A with talking animation
+                    // Override Mouth - A with talking animation (only if not in debug mode or debug allows it)
                     if (isSpeaking && key === 'Mouth - A') {
                         // Create varied mouth movement while speaking
                         const mouthCycle = Math.sin(mouthTimer.current * 8) * 0.5 + 0.5
@@ -242,15 +249,15 @@ export default function Model({ isSpeaking = false, poseFromChat = null, morphsF
     })
 
     // --- DEBUG LOGGING ---
-    console.log('Nodes:', nodes)
-    console.log('Materials:', materials)
-    console.log('Scene:', scene)
-    if (headMesh.current) {
-        console.log('Head Morph Dictionary:', headMesh.current.morphTargetDictionary)
-    }
+    // console.log('Nodes:', nodes)
+    // console.log('Materials:', materials)
+    // console.log('Scene:', scene)
+    // if (headMesh.current) {
+    //     console.log('Head Morph Dictionary:', headMesh.current.morphTargetDictionary)
+    // }
 
     return (
-        <group ref={groupRef} {...props} scale={5} position={[0, -0.2, 4]}>
+        <group ref={groupRef} {...props} scale={5} position={[1, -0.2, 4]} rotation={[0, Math.PI / 6, 0]} castShadow={true} receiveShadow={true}>
             <primitive object={scene} />
         </group>
     )

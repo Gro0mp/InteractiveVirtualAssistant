@@ -110,14 +110,29 @@ export default function ChatBotBeta() {
                 };
 
                 console.log('AI Response:', aiMessage.content);
-                console.log('Expressions:', aiMessage.expressions);
-                console.log('Pose', response.pose);
+                console.log('Expressions (raw):', response.expressionValues);
+                console.log('Pose data:', response.pose);
 
                 // Update pose state
-                setPose(response.pose);
+                setPose(response.pose?.trim() || null);
+
+                // Parse expressions if it's a JSON string
+                let parsedExpressions = null;
+                if (response.expressionValues) {
+                    try {
+                        if (typeof response.expressionValues === 'string') {
+                            parsedExpressions = JSON.parse(response.expressionValues);
+                        } else {
+                            parsedExpressions = response.expressionValues;
+                        }
+                        console.log('Expressions (parsed):', parsedExpressions);
+                    } catch (error) {
+                        console.error('Error parsing expressions:', error);
+                    }
+                }
 
                 // Update expressions state
-                setExpressions(response.expressionValues);
+                setExpressions(parsedExpressions);
 
                 // Set response and audio states
                 setResponse(aiMessage.content);
