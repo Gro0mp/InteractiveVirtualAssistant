@@ -8,7 +8,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Build image
-        run: docker build ../ -t dennisw342/virtual-assistant-frontend:latest
+        run: docker build ./ -t dennisw342/virtual-assistant-frontend:latest
       - name: Push image to Docker Hub
         run: |
           docker push dennisw342/virtual-assistant-frontend:latest
