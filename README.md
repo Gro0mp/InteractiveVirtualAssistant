@@ -83,8 +83,18 @@ move C:\Users\<Username>\Downloads\example.json C:\GoogleCloudCredentials\
 setx GOOGLE_APPLICATION_CREDENTIALS "C:\GoogleCloudCredentials\example.json"
 ```
 
-3. 
+### 3. Set up Ollama
+- Although the you could use the Docker Ollama Image file, that comes with uncertainty. So I reccomend going to the Ollama website and downloading it on your system.
 
+https://ollama.com/
+
+Afterwards, once you have installed it, run the following command in your terminal
+```bash
+docker pull gemma3:4b
+```
+
+### 4. Obtain and run Docker Images.
+WIP
 
 
 ## Usage
