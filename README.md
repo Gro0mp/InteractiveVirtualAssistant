@@ -179,7 +179,7 @@ The application uses STOMP over WebSocket for real-time bidirectional communicat
 - Automatic audio playback when response arrives
 - Base64-encoded audio data transmission
 - Proper cleanup and memory management
-- Speaking state tracking for lip sync
+- Speaking state tracking for lip movement
 
 ## Troubleshooting
 
@@ -193,52 +193,20 @@ Error: WebSocket connection to 'ws://localhost:8080/websocket' failed
 - Check backend logs: `docker-compose logs backend`
 - Verify port 8080 is not in use by another application
 
-**3D Model Not Loading**
-```
-Error: Could not load /models/lapwing/character3.glb
-```
-- Ensure model files are in `frontend/public/models/`
-- Check file permissions
-- Verify path in `Model.jsx` matches your file structure
-
 **Audio Not Playing**
 - Check browser console for errors
 - Ensure browser allows autoplay (user interaction may be required)
 - Verify audio data is being received in network tab
 - Check browser audio permissions
 
-**Port Already in Use**
-```
-Error: bind: address already in use
-```
-- Stop conflicting services or change ports in `docker-compose.yml`
-- On macOS, AirPlay Receiver uses port 5000 by default
-
 ### Debug Mode
 
 Enable debug controls to troubleshoot animation issues:
 
 1. Click anywhere in the 3D scene
-2. Press `H` to show Leva panel
+2. Press Leva panel
 3. Toggle "Enable GUI Control (Override Props)"
 4. Manually test poses and expressions
-
-## Development
-
-### Running Without Docker
-
-**Frontend**:
-```bash
-cd frontend
-npm install
-npm start
-```
-
-**Backend**:
-```bash
-cd backend
-./mvnw spring-boot:run
-```
 
 ### Hot Reload
 
@@ -275,6 +243,7 @@ Both containers support hot reload during development:
     "expressionValues": {
         "Mouth - Happy": 0.8,
         "Eyebrows - Sad": 0.0
+        ....
     }
 }
 ```
@@ -296,14 +265,6 @@ Both containers support hot reload during development:
 
 **Note**: WebGL 2.0 support required
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -314,13 +275,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - HDRI environments: https://polyhaven.com/
 - Three.js and React Three Fiber communities
 - Spring Boot team
-
-## Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Check existing issues for solutions
-- Review troubleshooting section above
 
 ## Roadmap
 
@@ -333,4 +287,4 @@ For issues and questions:
 
 ---
 
-**Important**: This application requires both Docker containers (frontend and backend) to be running simultaneously for full functionality. The frontend alone will not work without the backend WebSocket server. If you just want to see the model functionality, the backend is not necessary.
+**Important**: This application requires both Docker containers (frontend and backend) to be running simultaneously for full functionality. The frontend alone will not work without the backend WebSocket server. If you just want to see the model functionality, the backend is not necessary and you can check out the model on dwong.net/chatbot-test.
