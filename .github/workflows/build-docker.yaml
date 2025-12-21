@@ -3,12 +3,16 @@ on:
   [workflow_dispatch]
 jobs:
   publish_images:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Build image
-        run: docker build ./ -t dennisw342/virtual-assistant-frontend:latest
-      - name: Push image to Docker Hub
-        run: |
-          docker push dennisw342/virtual-assistant-frontend:latest
+      - name: Login to Docker Hub
+        run:
+          docker login -u dennisw342 -p ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: dennisw342/virtual-assistant-frontend:latest
