@@ -1,0 +1,4 @@
+name: Build and publish image to Docker Hub
+
+on:
+jobs:
