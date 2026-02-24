@@ -27,6 +27,7 @@ export interface ErrorResponse {
     message?: string;
 }
 
+
 class ApiService {
     // Login user
     async login(credentials: LoginRequest): Promise<AuthResponse> {
@@ -36,6 +37,7 @@ class ApiService {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(credentials),
+            credentials: 'include',
         });
 
         if (!response.ok) {
@@ -54,6 +56,7 @@ class ApiService {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(userData),
+            credentials: 'include',
         });
 
         if (!response.ok) {
@@ -62,6 +65,15 @@ class ApiService {
         }
 
         return response.json();
+    }
+
+    async getCurrentUser(): Promise< User > {
+        const res = await fetch(`${API_BASE_URL}/users/me`, {
+            method: 'GET',
+            credentials: 'include' // send session cookie
+        });
+        if (!res.ok) throw new Error('Not authenticated');
+        return res.json();
     }
 
     // Get user by ID
@@ -79,6 +91,42 @@ class ApiService {
 
         return response.json();
     }
+
+    async logout(): Promise<void> {
+        const response = await fetch('http://localhost:8080/logout', {
+            method: 'POST',
+            credentials: 'include',
+        });
+
+        // Spring commonly 302 redirects on logoutSuccessUrl; treat ok or redirect as success.
+        if (!(response.ok || response.redirected)) {
+            const text = await response.text().catch(() => '');
+            throw new Error(text || 'Logout failed');
+        }
+    }
+    // Upload a document (multipart/form-data) to /api/v1/documents/upload
+    async uploadDocument(file: File, userId?: string): Promise<string> {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (userId && userId.trim().length > 0) {
+            formData.append('userId', userId);
+        }
+
+        const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            throw new Error(text || 'Upload failed');
+        }
+
+        // Controller returns ResponseEntity<String>
+        return response.text();
+    }
+
 }
 
 export const api = new ApiService();

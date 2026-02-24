@@ -1,12 +1,10 @@
+// src/services/OAuthCallback.tsx
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { api } from './api';
 
-/**
- * This component handles the OAuth callback after GitHub authentication
- * It extracts user info from the session and stores it in the auth context
- */
-export function OAuthCallback () {
+export function OAuthCallback() {
     const navigate = useNavigate();
     const location = useLocation();
     const { login } = useAuth();
@@ -18,27 +16,24 @@ export function OAuthCallback () {
 
             if (oauthSuccess === 'success') {
                 try {
-                    // Fetch the authenticated user's information from the backend
-                    const response = await fetch('http://localhost:8080/api/v1/users/me', {
-                        credentials: 'include', // Important: include cookies for session
+                    const userData = await api.getCurrentUser();
+
+                    // Prefer backend-provided id; otherwise fallback to OAuth-provider fields if present
+                    const id = (userData as any).id ?? (userData as any).client_id ?? (userData as any).sub;
+
+                    const username =
+                        (userData as any).username ??
+                        (userData as any).login ??
+                        (userData as any).name ??
+                        (userData as any).email?.split('@')[0];
+
+                    login({
+                        id: Number(id),
+                        username: String(username),
+                        email: (userData as any).email,
                     });
 
-                    if (response.ok) {
-                        const userData = await response.json();
-
-                        // Store user in auth context
-                        login({
-                            id: userData.id,
-                            username: userData.username || userData.login, // GitHub returns 'login' field
-                            email: userData.email,
-                        });
-
-                        // Redirect to home
-                        navigate('/', { replace: true });
-                    } else {
-                        console.error('Failed to fetch user data after OAuth');
-                        navigate('/login', { replace: true });
-                    }
+                    navigate('/dashboard', { replace: true });
                 } catch (error) {
                     console.error('Error handling OAuth callback:', error);
                     navigate('/login', { replace: true });
@@ -50,20 +45,13 @@ export function OAuthCallback () {
     }, [location, login, navigate]);
 
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100vh',
-            fontSize: '18px',
-            color: '#64748b'
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: '18px', color: '#64748b' }}>
             <div style={{ textAlign: 'center' }}>
                 <div style={{ marginBottom: '16px', fontSize: '48px' }}>🔐</div>
                 <div>Completing sign in...</div>
             </div>
         </div>
     );
-};
+}
 
 export default OAuthCallback;

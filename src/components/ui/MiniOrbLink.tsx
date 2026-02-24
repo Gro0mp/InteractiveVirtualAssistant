@@ -9,7 +9,7 @@ export function MiniOrbLink() {
             to="/"
             aria-label="Back to landing page"
             title="Back to landing page"
-            className="absolute top-8 left-12 z-20 block h-[54px] w-[54px] rounded-full outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+            className="absolute top-8 left-8 z-20 block h-[54px] w-[54px] rounded-full outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
         >
             <motion.div
                 initial={{ opacity: 0, scale: 0.85 }}

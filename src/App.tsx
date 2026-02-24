@@ -3,12 +3,17 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
+
 import { DashboardPage } from "./pages/DashboardPage.tsx";
 import { InvoiceManagementPage } from "./pages/InvoiceManagementPage.tsx";
+import { DocumentManagementPage } from "./pages/DocumentManagementPage.tsx";
+import { AssistantPage } from "./pages/AssistantPage.tsx";
 
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoutes } from "./components/ProtectedRoutes.tsx";
 import { OAuthCallback } from "./services/OAuthCallback.tsx";
+
+{/* Component Testing */}
 
 /**
  * Wrapper for LandingPage that handles OAuth callback
@@ -38,8 +43,11 @@ export function App() {
                     {/* Protected Routes */}
                     <Route element={<ProtectedRoutes/>}>
                         <Route path="/dashboard" element={<DashboardPage/>} />
+                        <Route path="/assistant" element={<AssistantPage/>} />
                         <Route path="/invoices" element={<InvoiceManagementPage/>} />
+                        <Route path="/documents" element={<DocumentManagementPage/>} />
                     </Route>
+
                 </Routes>
             </AuthProvider>
         </BrowserRouter>

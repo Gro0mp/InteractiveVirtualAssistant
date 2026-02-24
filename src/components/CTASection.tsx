@@ -75,13 +75,6 @@ export function CTASection() {
               Get Started Free
             </Button>
           </Link>
-          <Button
-            variant="outline"
-            size="lg"
-            className="px-8 w-full sm:w-auto bg-white/50 backdrop-blur-sm">
-
-            Talk to Sales
-          </Button>
         </motion.div>
       </div>
     </section>);
