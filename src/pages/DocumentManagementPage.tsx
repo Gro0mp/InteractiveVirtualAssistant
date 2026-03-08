@@ -1,7 +1,6 @@
 import React from 'react'
 import { DashboardLayout } from "../components/DashboardLayout.tsx";
 import { DocumentUploadArea } from '../components/documents/DocumentUploadArea'
-import { EditorSidebar } from '../components/documents/EditorSidebar'
 import { motion } from 'framer-motion'
 
 export function DocumentManagementPage() {
