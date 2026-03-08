@@ -1,5 +1,5 @@
 // API service for backend communication
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/v1`;
 
 // Reuse the app-wide User type from AuthContext to avoid mismatches.
 import type { User } from '../context/AuthContext';
@@ -17,6 +17,26 @@ export interface SignUpRequest {
     last_login?: string; // Optional, backend may set this automatically
 }
 
+export interface Message {
+    userId: string;
+    role: 'user' | 'assistant';
+    content: string;
+    audioData?: string; // Base64-encoded TTS audio, optional
+    createdAt?: number;
+}
+
+/**
+ * Matches the Chat entity returned by ChatController.receiveMessage.
+ * Fields come directly from Chat.java: message, response, audioData, timestamp.
+ */
+export interface ChatResponse {
+    id: number;
+    message: string;       // The user's original message
+    response: string;      // The assistant's reply
+    audioData?: string;    // Base64 TTS audio, may be null if TTS failed
+    timestamp: string;
+}
+
 // Backend appears to return user fields directly. Keep message optional for compatibility.
 export type AuthResponse = User & {
     message?: string;
@@ -26,7 +46,6 @@ export interface ErrorResponse {
     error?: string;
     message?: string;
 }
-
 
 class ApiService {
     // Login user
@@ -67,6 +86,40 @@ class ApiService {
         return response.json();
     }
 
+    async getMessageHistory(id: number): Promise<ChatResponse[]> {
+        const response = await fetch(`${API_BASE_URL}/chat/user/${id}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(error || 'Failed to fetch message history');
+        }
+
+        return response.json(); // returns ChatResponse[] directly
+    }
+
+    async processMessage(userMessage: Message): Promise<ChatResponse> {
+        const response = await fetch(`${API_BASE_URL}/chat/receive-message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: userMessage.userId,
+                content: userMessage.content,
+            }),
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            throw new Error(`processMessage failed [${response.status}]: ${text}`);
+        }
+
+        return response.json();
+    }
+
     async getCurrentUser(): Promise< User > {
         const res = await fetch(`${API_BASE_URL}/users/me`, {
             method: 'GET',
@@ -93,7 +146,7 @@ class ApiService {
     }
 
     async logout(): Promise<void> {
-        const response = await fetch('http://localhost:8080/logout', {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/logout`, {
             method: 'POST',
             credentials: 'include',
         });
@@ -108,9 +161,8 @@ class ApiService {
     async uploadDocument(file: File, userId?: string): Promise<string> {
         const formData = new FormData();
         formData.append('file', file);
-        if (userId && userId.trim().length > 0) {
-            formData.append('userId', userId);
-        }
+        formData.append('userId', userId || ''); // Ensure userId is sent as a string, even if undefined
+        console.log("Uploading document with userId:", userId);
 
         const response = await fetch(`${API_BASE_URL}/documents/upload`, {
             method: 'POST',
@@ -123,7 +175,6 @@ class ApiService {
             throw new Error(text || 'Upload failed');
         }
 
-        // Controller returns ResponseEntity<String>
         return response.text();
     }
 

@@ -6,12 +6,9 @@ import {
     CheckSquare,
     Calendar,
     MessageSquare,
-    BarChart3,
     Settings,
     LogOut,
     Menu,
-    Sparkles,
-    Search,
     Bell,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -23,11 +20,10 @@ interface DashboardLayoutProps {
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Overview', path: '/dashboard' },
-    { icon: CheckSquare, label: 'Tasks', path: '/dashboard/tasks' },
-    { icon: Calendar, label: 'Calendar', path: '/dashboard/calendar' },
-    { icon: MessageSquare, label: 'Messages', path: '/dashboard/messages' },
-    { icon: BarChart3, label: 'Analytics', path: '/dashboard/analytics' },
-    { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
+    { icon: CheckSquare, label: 'AI Assistant', path: '/assistant' },
+    { icon: Calendar, label: 'Documents', path: '/documents' },
+    { icon: MessageSquare, label: 'Invoices', path: '/invoices' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
 ]
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -62,8 +58,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="h-full flex flex-col">
                     <div className="h-16 flex items-center px-6 border-b border-slate-100">
                         <Link to="/" className="flex items-center space-x-2 group">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-100 text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-colors duration-300">
-                                <Sparkles className="w-5 h-5" />
+                            <div className="flex items-center justify-center w-8 h-8 group-hover:text-white transition-colors duration-300">
+                                <img src={"/logo.png"} className={"scale-200"}/>
                             </div>
                             <span className="text-xl font-bold text-slate-900 tracking-tight">IVA</span>
                         </Link>
@@ -116,7 +112,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+                <header className="bg-white/40 backdrop-blue-xl border border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.08)] ring-1 ring-white/20 border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
@@ -125,19 +121,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         >
                             <Menu className="w-6 h-6"/>
                         </button>
-
-                        <div className="hidden sm:flex items-center max-w-md w-full">
-                            <div className="relative w-64">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-4 w-4 text-slate-400"/>
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Search tasks, messages..."
-                                    className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-violet-500 focus:border-violet-500 sm:text-sm transition-colors"
-                                />
-                            </div>
-                        </div>
                     </div>
 
                     <div className="flex items-center space-x-4">
@@ -150,7 +133,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-7xl mx-auto">{children}</div>
+                    <div className="max-w-7xl mx-auto h-full">{children}</div>
                 </main>
             </div>
         </div>

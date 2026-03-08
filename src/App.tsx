@@ -7,7 +7,8 @@ import { SignUpPage } from './pages/SignUpPage';
 import { DashboardPage } from "./pages/DashboardPage.tsx";
 import { InvoiceManagementPage } from "./pages/InvoiceManagementPage.tsx";
 import { DocumentManagementPage } from "./pages/DocumentManagementPage.tsx";
-import { AssistantPage } from "./pages/AssistantPage.tsx";
+import { SettingsPage } from "./pages/SettingsPage.tsx";
+import { AssistantDemo } from "./pages/AssistantDemo.tsx";
 
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoutes } from "./components/ProtectedRoutes.tsx";
@@ -42,10 +43,11 @@ export function App() {
 
                     {/* Protected Routes */}
                     <Route element={<ProtectedRoutes/>}>
+                        <Route path="/assistant" element={<AssistantDemo />} />
                         <Route path="/dashboard" element={<DashboardPage/>} />
-                        <Route path="/assistant" element={<AssistantPage/>} />
                         <Route path="/invoices" element={<InvoiceManagementPage/>} />
                         <Route path="/documents" element={<DocumentManagementPage/>} />
+                        <Route path="settings" element={<SettingsPage/>}/>
                     </Route>
 
                 </Routes>

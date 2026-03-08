@@ -23,7 +23,6 @@ export function OAuthCallback() {
 
                     const username =
                         (userData as any).username ??
-                        (userData as any).login ??
                         (userData as any).name ??
                         (userData as any).email?.split('@')[0];
 
@@ -33,7 +32,7 @@ export function OAuthCallback() {
                         email: (userData as any).email,
                     });
 
-                    navigate('/dashboard', { replace: true });
+                    navigate('/assistant', { replace: true });
                 } catch (error) {
                     console.error('Error handling OAuth callback:', error);
                     navigate('/login', { replace: true });
@@ -41,17 +40,15 @@ export function OAuthCallback() {
             }
         };
 
-        handleOAuthCallback();
+        handleOAuthCallback().then(r => r);
     }, [location, login, navigate]);
 
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: '18px', color: '#64748b' }}>
             <div style={{ textAlign: 'center' }}>
-                <div style={{ marginBottom: '16px', fontSize: '48px' }}>🔐</div>
+                <div style={{ marginBottom: '16px', fontSize: '48px' }}></div>
                 <div>Completing sign in...</div>
             </div>
         </div>
     );
 }
-
-export default OAuthCallback;

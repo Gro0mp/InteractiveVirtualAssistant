@@ -37,7 +37,7 @@ export function Button({
   };
   return (
     <button
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} cursor-pointer`}
       disabled={disabled || isLoading}
       {...props}>
 

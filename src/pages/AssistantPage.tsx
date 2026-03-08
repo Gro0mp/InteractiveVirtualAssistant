@@ -5,6 +5,8 @@ import {DashboardLayout} from '../components/DashboardLayout'
 import {AssistantChatPanel, type Message} from '../components/assistant/AssistantChatPanel'
 import {AssistantModelPanel} from '../components/assistant/AssistantModelPanel'
 import {AssistantToolsPanel} from '../components/assistant/AssistantToolsPanel'
+import {TTSControls} from "../components/assistant/TTSControls.tsx";
+
 import {motion} from 'framer-motion'
 import {useAuth} from "../context/AuthContext.tsx";
 
@@ -12,6 +14,7 @@ export function AssistantPage() {
 
     const {user} = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
+    const [audio, setAudio] = useState<string | null>(null);
 
     const [connected, setConnected] = useState(false);
 
@@ -22,7 +25,7 @@ export function AssistantPage() {
      */
     const connnectWebSocket = (userId: any) => {
         const client = new Client({
-            brokerURL: 'ws://localhost:8080/websocket',
+            brokerURL: import.meta.env.VITE_BACKEND_WEBSOCKET_URL,
 
             // Reconnect settings
             reconnectDelay: 5000,
@@ -35,9 +38,9 @@ export function AssistantPage() {
                 console.log('Connected to WebSocket:', frame);
                 setConnected(true);
 
-                // Subscribe to messages
+                // Subscribe to messages for this user
                 console.log('Subscribing to /user/queue/messages');
-                client.subscribe(`/user/${userId}/queue/messages`, (message) => {
+                client.subscribe(`/user/${user?.id}/queue/messages`, (message) => {
                     console.log('Raw message received on /user/queue/messages:', message);
                     const response = JSON.parse(message.body);
                     handleWebSocketMessage(response);
@@ -45,7 +48,7 @@ export function AssistantPage() {
 
                 // Subscribe to chat history
                 console.log('Subscribing to /user/queue/history');
-                client.subscribe(`/user/${userId}/queue/history`, (message) => {
+                client.subscribe(`/user/${user?.id}/queue/history`, (message) => {
                     console.log('Raw history received on /user/queue/history:', message);
                     const history = JSON.parse(message.body);
                     loadChatHistoryFromWebSocket(history);
@@ -117,6 +120,7 @@ export function AssistantPage() {
                     body: JSON.stringify({
                         userId: user.id,
                         message: newMessage.content,
+                        isGuest: false
                     }),
                 });
             }
@@ -149,6 +153,11 @@ export function AssistantPage() {
                     audioData: response.audioData, // Optional field for audio responses
                 }
                 setMessages((prevMessages) => [...prevMessages, AssistantMessage]);
+
+                if (!response.audioData.isEmpty) {
+                    setAudio(response.audioData);
+                }
+
                 break;
             case 'error':
                 console.error('Server error:', response.message);
@@ -228,6 +237,7 @@ export function AssistantPage() {
         setMessages(formatted);
     };
 
+
     useEffect(() => {
         if (!user?.id) return
         if (connected) return
@@ -284,6 +294,7 @@ export function AssistantPage() {
 
                         <div className="lg:h-[calc(100vh-12.5rem)]">
                             <AssistantModelPanel modelUrl={modelUrl}/>
+                            <TTSControls audioData={audio} autoPlay={true}/>
                         </div>
 
                         <motion.div

@@ -24,40 +24,44 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Restore session on mount:
-    // 1) prefer localStorage (fast)
-    // 2) otherwise ask backend (/users/me) which works for OAuth + traditional sessions
     useEffect(() => {
         let cancelled = false;
 
         const restore = async () => {
-            try {
-                const storedUser = localStorage.getItem('user');
-                if (storedUser) {
-                    try {
-                        const parsed = JSON.parse(storedUser) as User;
-                        if (!cancelled) setUser(parsed);
-                        return;
-                    } catch (error) {
-                        console.error('Failed to parse stored user:', error);
-                        localStorage.removeItem('user');
+            const storedUser = localStorage.getItem('user'); // Try getting user from localStorage first
+            if (storedUser) {
+                try {
+                    const parsed = JSON.parse(storedUser) as User;
+                    if (!cancelled) {
+                        setUser(parsed);
+                        setIsLoading(false);
                     }
+                } catch (error) {
+                    console.error('Failed to parse stored user:', error);
+                    localStorage.removeItem('user');
                 }
-
-                // If no local user, try backend session cookie
+            }
+            // If no valid user in localStorage, try fetching from backend
+            try {
                 const me = await api.getCurrentUser();
                 if (!cancelled) {
                     setUser(me);
                     localStorage.setItem('user', JSON.stringify(me));
                 }
             } catch {
-                // Not authenticated (or network error) => keep user null
+                localStorage.removeItem('user');
+                if (!cancelled) {
+                    setUser(null);
+                    setIsLoading(false);
+                }
             } finally {
-                if (!cancelled) setIsLoading(false);
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
         };
 
-        restore();
+        restore().then(r => (r));
         return () => {
             cancelled = true;
         };

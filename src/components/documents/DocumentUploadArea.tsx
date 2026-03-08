@@ -5,30 +5,15 @@ import { Upload, FileText, X, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../ui/Button'
 import { api } from '../../services/api'
-
-type CurrentUser = { id: number; username: string; email: string }
+import {useAuth} from "../../context/AuthContext.tsx";
 
 export function DocumentUploadArea() {
     const [file, setFile] = useState<File | null>(null)
     const [isDragging, setIsDragging] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
-    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
 
-    useEffect(() => {
-        let mounted = true
-        api.getCurrentUser()
-            .then((u) => {
-                if (mounted) setCurrentUser(u)
-            })
-            .catch(() => {
-                if (mounted) setCurrentUser(null)
-            })
-        return () => {
-            mounted = false
-        }
-    }, [])
+    const { user } = useAuth() // Assuming you have an AuthContext providing user info
 
-    const userId = currentUser?.id != null ? String(currentUser.id) : undefined
 
     const fileUrl = useMemo(() => {
         if (!file) return null
@@ -55,8 +40,8 @@ export function DocumentUploadArea() {
     }
 
     const handleSaveDocument = async (selectedFile: File) => {
-        console.log(`Uploading with userId:`, userId)
-        await api.uploadDocument(selectedFile, userId)
+        console.log(`Uploading with userId:`, user?.id)
+        await api.uploadDocument(selectedFile, user?.id ? String(user.id) : undefined)
     }
 
     const handleFileSelection = async (selectedFile: File) => {
@@ -97,7 +82,7 @@ export function DocumentUploadArea() {
                                 <div className="text-center">
                                     <Loader2 className="w-12 h-12 text-violet-600 animate-spin mx-auto mb-4" />
                                     <p className="text-lg font-medium text-slate-900">Uploading document...</p>
-                                    <p className="text-sm text-slate-500 mt-1">Please wait while we process your file\.</p>
+                                    <p className="text-sm text-slate-500 mt-1">Please wait while we process your file.</p>
                                 </div>
                             ) : (
                                 <>
