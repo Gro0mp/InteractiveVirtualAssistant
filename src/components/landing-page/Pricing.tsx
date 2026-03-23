@@ -1,135 +1,144 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { Check } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "../ui/Button.tsx";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Check, Minus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '../ui/Button.tsx';
 
 type PricingPlan = {
     title: string;
     price: string;
     cadence: string;
     description: string;
-    features: string[];
+    features: { label: string; included: boolean }[];
     ctaLabel: string;
     ctaHref: string;
     highlighted?: boolean;
 };
 
-const pricing: PricingPlan[] = [
+const plans: PricingPlan[] = [
     {
         title: 'Free',
         price: '$0',
         cadence: 'forever',
-        description: 'Try IVA with the essentials — no credit card needed.',
+        description: 'Explore IVA with no commitment.',
         features: [
-            'Assistant chat (limited)',
-            'Basic task guidance',
-            'Single workspace',
-            'Community support'
+            { label: '5 mock interviews / month', included: true },
+            { label: 'Basic job matching', included: true },
+            { label: 'Resume review (1/month)', included: true },
+            { label: 'Community support', included: true },
+            { label: 'Priority AI responses', included: false },
+            { label: 'Advanced analytics', included: false },
         ],
         ctaLabel: 'Start free',
         ctaHref: '/signup',
     },
     {
         title: 'Basic',
-        price: '$19.99',
-        cadence: 'per month',
-        description: 'For individuals getting started with IVA automation.',
+        price: '$19',
+        cadence: '/ month',
+        description: 'For candidates actively applying.',
         features: [
-            'Core assistant chat + task guidance',
-            'Basic document & invoice workflows',
-            'Email reminders and simple automations',
-            'Community support'
+            { label: 'Unlimited mock interviews', included: true },
+            { label: 'Smart job matching (daily)', included: true },
+            { label: 'Unlimited resume tailoring', included: true },
+            { label: 'Email drafting & cover letters', included: true },
+            { label: 'Priority AI responses', included: true },
+            { label: 'Advanced analytics', included: false },
         ],
-        ctaLabel: 'Get started',
+        ctaLabel: 'Start Basic',
         ctaHref: '/signup',
-        highlighted: true
+        highlighted: true,
     },
     {
         title: 'Pro',
-        price: '$29.99',
-        cadence: 'per month',
-        description: 'For pros who want faster workflows and more power.',
+        price: '$29',
+        cadence: '/ month',
+        description: 'For power users who want every edge.',
         features: [
-            'Everything in Basic',
-            'Priority execution for automations',
-            'Advanced templates and exports',
-            'Priority support'
+            { label: 'Everything in Basic', included: true },
+            { label: 'Advanced progress analytics', included: true },
+            { label: 'Custom coaching plans', included: true },
+            { label: 'Priority support (24hr)', included: true },
+            { label: 'Early feature access', included: true },
+            { label: 'API access (coming soon)', included: true },
         ],
         ctaLabel: 'Start Pro',
         ctaHref: '/signup',
     },
 ];
 
-function PricingCard({ plan }: { plan: PricingPlan }) {
-    const cardInner = (
-        <div
-            className={
-                plan.highlighted
-                    ? "rounded-2xl bg-white p-8 sm:p-10 shadow-lg shadow-slate-900/5 border border-white/60"
-                    : "rounded-2xl bg-white p-8 sm:p-10 shadow-sm border border-slate-200"
-            } id={"pricing"}>
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-semibold text-slate-900">
+function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.45, delay: index * 0.09 }}
+            className="h-full"
+        >
+            <div
+                className={`relative h-full flex flex-col p-7 border transition-colors duration-150 ${
+                    plan.highlighted
+                        ? 'bg-blue-600 border-blue-500'
+                        : 'bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
+                }`}
+            >
+                {plan.highlighted && (
+                    <div className="absolute -top-px left-6 right-6 h-px bg-blue-400" aria-hidden />
+                )}
+
+                <div className="flex items-start justify-between mb-5">
+                    <div>
+                        <h3 className={`text-xs font-semibold uppercase tracking-widest font-mono mb-1.5 ${plan.highlighted ? 'text-blue-100' : 'text-neutral-500 dark:text-neutral-400'}`}>
                             {plan.title}
                         </h3>
-                        {plan.highlighted && (
-                            <span className="inline-flex items-center rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-medium text-cyan-700 ring-1 ring-inset ring-cyan-200">
-                                Most popular
-                            </span>
-                        )}
+                        <p className={`text-xs leading-relaxed ${plan.highlighted ? 'text-blue-200' : 'text-neutral-500 dark:text-neutral-600'}`}>
+                            {plan.description}
+                        </p>
                     </div>
-                    <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                        {plan.description}
-                    </p>
+                    {plan.highlighted && (
+                        <span className="text-[9px] font-semibold font-mono uppercase tracking-widest text-blue-200 border border-blue-400/50 px-2 py-1 whitespace-nowrap">
+              Popular
+            </span>
+                    )}
                 </div>
-            </div>
 
-            <div className="mt-6 flex items-end gap-2">
-                <div className="text-4xl font-bold tracking-tight text-slate-900">
-                    {plan.price}
+                <div className="flex items-end gap-1 mb-7">
+          <span className="text-4xl font-semibold font-mono tracking-tight text-neutral-900 dark:text-white">
+            {plan.price}
+          </span>
+                    <span className={`pb-1 text-xs font-mono ${plan.highlighted ? 'text-blue-300' : 'text-neutral-400 dark:text-neutral-600'}`}>
+            {plan.cadence}
+          </span>
                 </div>
-                <div className="pb-1 text-sm text-slate-500">{plan.cadence}</div>
-            </div>
 
-            <div className="mt-6">
-                <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-3 text-sm text-slate-700">
-                            <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-50 ring-1 ring-cyan-200">
-                                <Check className="h-3.5 w-3.5 text-black" />
-                            </span>
-                            <span className="leading-relaxed">{feature}</span>
+                <ul className="space-y-2.5 mb-8 flex-1" role="list">
+                    {plan.features.map(({ label, included }) => (
+                        <li key={label} className={`flex items-center gap-2.5 text-xs ${
+                            included
+                                ? plan.highlighted ? 'text-blue-100' : 'text-neutral-600 dark:text-neutral-400'
+                                : plan.highlighted ? 'text-blue-400/50' : 'text-neutral-300 dark:text-neutral-800'
+                        }`}>
+                            {included ? (
+                                <Check className={`w-3.5 h-3.5 flex-shrink-0 ${plan.highlighted ? 'text-blue-200' : 'text-blue-500'}`} aria-label="Included" />
+                            ) : (
+                                <Minus className="w-3.5 h-3.5 flex-shrink-0 text-current" aria-label="Not included" />
+                            )}
+                            <span className="font-mono">{label}</span>
                         </li>
                     ))}
                 </ul>
-            </div>
 
-            <div className="mt-8">
                 <Link to={plan.ctaHref} className="block">
-                    <Button
-                        size="lg"
-                        variant={plan.highlighted ? 'secondary' : 'outline'}
-                        className="w-full">
+                    <Button size="lg" variant={plan.highlighted ? 'primary' : 'outline'} className="w-full">
                         {plan.ctaLabel}
                     </Button>
                 </Link>
-                <div className="mt-3 text-xs text-slate-500">
-                    Cancel anytime. No long-term contracts.
-                </div>
+                <p className={`mt-2.5 text-center text-[10px] font-mono ${plan.highlighted ? 'text-blue-300' : 'text-neutral-400 dark:text-neutral-700'}`}>
+                    Cancel anytime
+                </p>
             </div>
-        </div>
-    );
-
-    if (!plan.highlighted) return cardInner;
-
-    // Gradient border treatment for the featured plan
-    return (
-        <div className="rounded-2xl bg-gradient-to-r from-cyan-200/80 via-cyan-200/70 to-blue-200/70 p-[1px]">
-            {cardInner}
-        </div>
+        </motion.div>
     );
 }
 
@@ -137,93 +146,53 @@ export function Pricing() {
     return (
         <section
             id="pricing"
-            aria-labelledby="pricing-title"
-            className="py-24 bg-slate-50 relative overflow-hidden">
+            aria-labelledby="pricing-heading"
+            className="py-24 bg-neutral-50 dark:bg-[#0A0A0A] relative overflow-hidden transition-colors duration-300"
+        >
+            <div className="absolute top-0 left-0 right-0 h-px bg-neutral-200 dark:bg-neutral-900" />
 
-            {/* Subtle background accents (kept minimal + on-theme) */}
-            <div className="absolute inset-0 -z-10">
-                <div className="absolute -top-24 left-[-120px] h-72 w-72 rounded-full bg-cyan-200/40 blur-3xl" />
-                <div className="absolute -bottom-24 right-[-140px] h-72 w-72 rounded-full bg-cyan-200/40 blur-3xl" />
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/50 via-white to-cyan-50/50" />
-            </div>
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="text-center max-w-3xl mx-auto mb-16">
-                    <motion.h2
-                        id="pricing-title"
-                        initial={{
-                            opacity: 0,
-                            y: 20
-                        }}
-                        whileInView={{
-                            opacity: 1,
-                            y: 0
-                        }}
-                        viewport={{
-                            once: true
-                        }}
-                        transition={{
-                            duration: 0.5
-                        }}
-                        className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-
-                        Pricing Plans
-                    </motion.h2>
+            <div className="max-w-6xl mx-auto px-5 sm:px-8 relative z-10">
+                <div className="mb-14">
                     <motion.p
-                        initial={{
-                            opacity: 0,
-                            y: 20
-                        }}
-                        whileInView={{
-                            opacity: 1,
-                            y: 0
-                        }}
-                        viewport={{
-                            once: true
-                        }}
-                        transition={{
-                            duration: 0.5,
-                            delay: 0.1
-                        }}
-                        className="text-lg text-slate-600">
-
-                        Choose a plan that fits your workflow. Upgrade anytime.
+                        initial={{ opacity: 0, y: 8 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.35 }}
+                        className="text-[10px] font-medium text-blue-600 dark:text-blue-500 uppercase tracking-widest font-mono mb-3"
+                    >
+                        Pricing
                     </motion.p>
+                    <motion.h2
+                        id="pricing-heading"
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4, delay: 0.05 }}
+                        className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-white tracking-tight"
+                        style={{ fontFamily: "'DM Mono', monospace" }}
+                    >
+                        Simple, transparent pricing
+                    </motion.h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-                    {pricing.map((plan, index) => (
-                        <motion.div
-                            key={plan.title}
-                            initial={{
-                                opacity: 0,
-                                y: 20
-                            }}
-                            whileInView={{
-                                opacity: 1,
-                                y: 0
-                            }}
-                            viewport={{
-                                once: true
-                            }}
-                            transition={{
-                                duration: 0.5,
-                                delay: index * 0.08
-                            }}
-                            className={plan.highlighted ? "md:-mt-2" : ""}>
-                            <PricingCard plan={plan} />
-                        </motion.div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-900">
+                    {plans.map((plan, i) => (
+                        <PricingCard key={plan.title} plan={plan} index={i} />
                     ))}
                 </div>
 
-                <div className="mt-14 text-center text-sm text-slate-500">
-                    Need something custom?{' '}
-                    <a
-                        href="#"
-                        className="text-cyan-700 hover:text-cyan-800 underline underline-offset-4">
-                        Contact us
+                <motion.p
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    className="mt-8 text-[11px] font-mono text-neutral-400 dark:text-neutral-700"
+                >
+                    Need a custom plan?{' '}
+                    <a href="#" className="text-blue-600 dark:text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 transition-colors underline underline-offset-4">
+                        Contact us →
                     </a>
-                </div>
+                </motion.p>
             </div>
         </section>
     );

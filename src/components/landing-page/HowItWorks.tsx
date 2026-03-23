@@ -1,124 +1,80 @@
 import React from 'react';
-import {motion} from 'framer-motion';
+import { motion } from 'framer-motion';
+import { UserPlus, Speech, TrendingUp } from 'lucide-react';
 
 const steps = [
-    {
-        number: '1',
-        title: 'Sign Up',
-        description:
-            'Create your free account in under 30 seconds. No credit card required.'
-    },
-    {
-        number: '2',
-        title: 'Connect',
-        description:
-            'Link your favorite tools and set your personal preferences for IVA.'
-    },
-    {
-        number: '3',
-        title: 'Automate',
-        description:
-            'Sit back as IVA handles your schedule, emails, and routine tasks.'
-    }];
+    { icon: UserPlus, number: '01', title: 'Create your profile', description: 'Sign up in under a minute. Set your target roles, industries, and experience level so IVA can personalise everything.', detail: 'No credit card needed' },
+    { icon: Speech, number: '02', title: 'Practice & prepare', description: 'Run mock interviews, review your resume, and browse curated job matches — all with AI that understands your goals.', detail: 'Real-time feedback' },
+    { icon: TrendingUp, number: '03', title: 'Track & improve', description: 'Monitor your interview scores over time. IVA pinpoints exactly what to work on so every session moves the needle.', detail: 'Progress dashboard' },
+];
 
 export function HowItWorks() {
     return (
-        <section id="how-it-works" className="relative py-24 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Abstract Shapes */}
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-40">
-                    <div className="absolute top-10 left-10 w-64 h-64 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
-                    <div className="absolute top-10 right-10 w-64 h-64 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
-                    <div className="absolute -bottom-8 left-20 w-64 h-64 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
-                </div>
+        <section
+            id="how-it-works"
+            aria-labelledby="how-it-works-heading"
+            className="py-24 bg-white dark:bg-neutral-950 relative overflow-hidden transition-colors duration-300"
+        >
+            <div className="absolute top-0 left-0 right-0 h-px bg-neutral-200 dark:bg-neutral-900" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-48 bg-blue-400/5 dark:bg-blue-600/5 blur-[80px] pointer-events-none" aria-hidden />
 
-                <div className="text-center mb-16">
-                    <motion.h2
-                        initial={{
-                            opacity: 0,
-                            y: 20
-                        }}
-                        whileInView={{
-                            opacity: 1,
-                            y: 0
-                        }}
-                        viewport={{
-                            once: true
-                        }}
-                        className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-
-                        How IVA Works
-                    </motion.h2>
+            <div className="max-w-6xl mx-auto px-5 sm:px-8 relative z-10">
+                <div className="mb-14">
                     <motion.p
-                        initial={{
-                            opacity: 0,
-                            y: 20
-                        }}
-                        whileInView={{
-                            opacity: 1,
-                            y: 0
-                        }}
-                        viewport={{
-                            once: true
-                        }}
-                        transition={{
-                            delay: 0.1
-                        }}
-                        className="text-lg text-slate-600">
-
-                        Get started in three simple steps
+                        initial={{ opacity: 0, y: 8 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.35 }}
+                        className="text-[10px] font-medium text-blue-600 dark:text-blue-500 uppercase tracking-widest font-mono mb-3"
+                    >
+                        Process
                     </motion.p>
+                    <motion.h2
+                        id="how-it-works-heading"
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4, delay: 0.05 }}
+                        className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-white tracking-tight"
+                        style={{ fontFamily: "'DM Mono', monospace" }}
+                    >
+                        How IVA works
+                    </motion.h2>
                 </div>
 
-                <div className="relative">
-                    {/* Connecting Line (Desktop) */}
-                    <div
-                        className="hidden md:block absolute top-8 left-[16%] right-[16%] h-0.5 border-t-2 border-dashed border-slate-200 -z-10"/>
+                {/* Steps grid — gap is the separator */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-900">
+                    {steps.map((step, index) => {
+                        const Icon = step.icon;
+                        return (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 16 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.45, delay: index * 0.1 }}
+                                className="bg-white dark:bg-neutral-950 p-8 relative group hover:bg-neutral-50 dark:hover:bg-neutral-900/60 transition-colors duration-200"
+                            >
+                <span className="absolute top-8 right-8 text-[10px] font-mono text-neutral-200 dark:text-neutral-800 group-hover:text-neutral-300 dark:group-hover:text-neutral-700 transition-colors">
+                  {step.number}
+                </span>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                        {steps.map((step, index) =>
-                                <motion.div
-                                    key={index}
-                                    initial={{
-                                        opacity: 0,
-                                        y: 20
-                                    }}
-                                    whileInView={{
-                                        opacity: 1,
-                                        y: 0
-                                    }}
-                                    viewport={{
-                                        once: true
-                                    }}
-                                    transition={{
-                                        delay: index * 0.2
-                                    }}
-                                    className="flex flex-col items-center text-center relative">
+                                <div className="w-10 h-10 border border-neutral-200 dark:border-neutral-800 group-hover:border-blue-400 dark:group-hover:border-blue-500/50 flex items-center justify-center mb-6 transition-colors duration-200">
+                                    <Icon className="w-4 h-4 text-neutral-400 dark:text-neutral-600 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200" aria-hidden />
+                                </div>
 
-                                    {/* Connecting Line (Mobile) */}
-                                    {index !== steps.length - 1 &&
-                                        <div
-                                            className="md:hidden absolute top-16 bottom-[-48px] left-1/2 w-0.5 border-l-2 border-dashed border-slate-200 -z-10"/>
-                                    }
+                                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2.5">{step.title}</h3>
+                                <p className="text-xs text-neutral-500 dark:text-neutral-600 leading-relaxed mb-5">{step.description}</p>
 
-                                    <div
-                                        className="w-16 h-16 rounded-full bg-white border-4 border-cyan-50 flex items-center justify-center mb-6 shadow-sm relative z-10">
-                  <span className="text-2xl font-bold text-black-600">
-                    {step.number}
-                  </span>
-                                    </div>
-                                    <h3 className="text-xl font-bold text-slate-900 mb-3">
-                                        {step.title}
-                                    </h3>
-                                    <p className="text-slate-600 max-w-xs mx-auto">
-                                        {step.description}
-                                    </p>
-                                </motion.div>
-                        )}
-                    </div>
+                                <div className="inline-flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-800 px-2 py-1">
+                                    <span className="w-1 h-1 rounded-full bg-blue-500" aria-hidden />
+                                    <span className="text-[10px] font-mono text-neutral-400 dark:text-neutral-600">{step.detail}</span>
+                                </div>
+                            </motion.div>
+                        );
+                    })}
                 </div>
             </div>
         </section>
     );
-
 }

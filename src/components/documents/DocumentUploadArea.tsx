@@ -1,5 +1,3 @@
-// `src/components/documents/DocumentUploadArea.tsx`
-
 import React, { useEffect, useMemo, useState } from 'react'
 import { Upload, FileText, X, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -70,23 +68,23 @@ export function DocumentUploadArea() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className={`flex-1 flex flex-col items-center justify-center p-8 transition-colors ${isDragging ? 'bg-violet-50 border-violet-300' : 'bg-white'}`}
+                        className={`flex-1 flex flex-col items-center justify-center p-8 transition-colors ${isDragging ? 'bg-gray-50 border-gray-300' : 'bg-white'}`}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                     >
                         <div
-                            className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-12 transition-colors ${isDragging ? 'border-violet-400 bg-violet-50/50' : 'border-slate-300 hover:border-violet-300 hover:bg-slate-50'}`}
+                            className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-12 transition-colors ${isDragging ? 'border-gray-400 bg-gray-50/50' : 'border-slate-300 hover:border-gray-300 hover:bg-slate-50'}`}
                         >
                             {isUploading ? (
                                 <div className="text-center">
-                                    <Loader2 className="w-12 h-12 text-violet-600 animate-spin mx-auto mb-4" />
+                                    <Loader2 className="w-12 h-12 text-gray-600 animate-spin mx-auto mb-4" />
                                     <p className="text-lg font-medium text-slate-900">Uploading document...</p>
                                     <p className="text-sm text-slate-500 mt-1">Please wait while we process your file.</p>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="w-16 h-16 bg-violet-100 text-violet-600 rounded-full flex items-center justify-center mb-6">
+                                    <div className="w-16 h-16 bg-cyan-100 text-gray-600 rounded-full flex items-center justify-center mb-6">
                                         <Upload className="w-8 h-8" />
                                     </div>
                                     <h3 className="text-xl font-semibold text-slate-900 mb-2">Upload your document</h3>
@@ -102,7 +100,7 @@ export function DocumentUploadArea() {
                                             }}
                                             accept=".pdf,.docx,.txt"
                                         />
-                                        <Button size="lg">Browse Files</Button>
+                                        <Button size="lg" variant={"secondary"}>Browse Files</Button>
                                     </div>
                                 </>
                             )}
@@ -125,7 +123,7 @@ export function DocumentUploadArea() {
                             </button>
 
                             <div className="mb-6 pb-4 border-b border-slate-100 flex items-center">
-                                <FileText className="w-8 h-8 text-violet-600 mr-4" />
+                                <FileText className="w-8 h-8 text-gray-600 mr-4" />
                                 <div className="min-w-0">
                                     <h2 className="text-2xl font-bold text-slate-900 truncate">{file.name}</h2>
                                     <p className="text-sm text-slate-500">

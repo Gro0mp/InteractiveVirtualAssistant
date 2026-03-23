@@ -1,135 +1,87 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  Calendar,
-  Mail,
-  Zap,
-  MessageSquare,
-  BarChart3,
-  Blocks } from
-'lucide-react';
+import { Mic, Briefcase, FileText, MessageSquare, BarChart3, Mail } from 'lucide-react';
+
 const features = [
-{
-  icon: <Calendar className="w-6 h-6 text-black-600" />,
-  title: 'Smart Scheduling',
-  description:
-  'Automatically manage your calendar, set reminders, and never miss a meeting again.'
-},
-{
-  icon: <Mail className="w-6 h-6 text-black-600" />,
-  title: 'Email Management',
-  description:
-  'Draft, sort, and prioritize emails with intelligent categorization and quick replies.'
-},
-{
-  icon: <Zap className="w-6 h-6 text-black-600" />,
-  title: 'Task Automation',
-  description:
-  'Create automated workflows that handle repetitive tasks effortlessly and reliably.'
-},
-{
-  icon: <MessageSquare className="w-6 h-6 text-black-600" />,
-  title: 'Natural Language',
-  description:
-  'Communicate naturally. IVA understands context, intent, and nuance in every request.'
-},
-{
-  icon: <BarChart3 className="w-6 h-6 text-black-600" />,
-  title: 'Data Insights',
-  description:
-  'Get actionable insights from your data with smart analytics and visualization tools.'
-},
-{
-  icon: <Blocks className="w-6 h-6 text-black-600" />,
-  title: 'Integrations',
-  description:
-  'Connect with 200+ tools you already use every day like Slack, Notion, and Gmail.'
-}];
+  { icon: Mic, title: 'Mock Interviews', description: 'Practice with an AI that simulates real-world scenarios. Get precise feedback on clarity, pacing, and technical depth after every session.', tag: '01' },
+  { icon: Briefcase, title: 'Smart Job Matching', description: 'Surface openings tailored to your skills and target role. Updated daily from thousands of verified listings.', tag: '02' },
+  { icon: FileText, title: 'Resume Tailoring', description: 'Paste any job description and IVA rewrites your bullets to match — optimised for both ATS scanners and human readers.', tag: '03' },
+  { icon: MessageSquare, title: 'Natural Conversation', description: 'Ask anything — salary negotiation tactics, role-specific prep, industry insights — and get concise, expert answers.', tag: '04' },
+  { icon: BarChart3, title: 'Progress Analytics', description: 'Track interview scores and skill gaps over time. Clear dashboards show exactly where to focus each session.', tag: '05' },
+  { icon: Mail, title: 'Email Drafting', description: 'Generate follow-ups, cover letters, and thank-you notes in seconds — personalised to each role and recruiter.', tag: '06' },
+];
 
 export function FeaturesSection() {
   return (
-    <section
-      id="features"
-      className="py-24 bg-slate-50 relative overflow-hidden">
+      <section
+          id="features"
+          aria-labelledby="features-heading"
+          className="py-24 bg-neutral-50 dark:bg-[#0A0A0A] relative transition-colors duration-300"
+      >
+        <div className="absolute top-0 left-0 right-0 h-px bg-neutral-200 dark:bg-neutral-900" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.h2
-            initial={{
-              opacity: 0,
-              y: 20
-            }}
-            whileInView={{
-              opacity: 1,
-              y: 0
-            }}
-            viewport={{
-              once: true
-            }}
-            transition={{
-              duration: 0.5
-            }}
-            className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="mb-14 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <motion.p
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.35 }}
+                  className="text-[10px] font-medium text-blue-600 dark:text-blue-500 uppercase tracking-widest font-mono mb-3"
+              >
+                Capabilities
+              </motion.p>
+              <motion.h2
+                  id="features-heading"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: 0.05 }}
+                  className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-white tracking-tight"
+                  style={{ fontFamily: "'DM Mono', monospace" }}
+              >
+                Everything you need to get hired
+              </motion.h2>
+            </div>
+            <motion.p
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="text-sm text-neutral-500 max-w-xs md:text-right leading-relaxed"
+            >
+              One platform from first application to final round.
+            </motion.p>
+          </div>
 
-            Everything you need
-          </motion.h2>
-          <motion.p
-            initial={{
-              opacity: 0,
-              y: 20
-            }}
-            whileInView={{
-              opacity: 1,
-              y: 0
-            }}
-            viewport={{
-              once: true
-            }}
-            transition={{
-              duration: 0.5,
-              delay: 0.1
-            }}
-            className="text-lg text-slate-600">
+          {/* Grid — border color adapts */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border border-neutral-200 dark:border-neutral-900">
+            {features.map((f, index) => {
+              const Icon = f.icon;
+              return (
+                  <motion.article
+                      key={f.title}
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, delay: index * 0.06 }}
+                      className="group p-7 border-b border-r border-neutral-200 dark:border-neutral-900 bg-transparent hover:bg-white dark:hover:bg-neutral-900/50 transition-colors duration-200 cursor-default"
+                  >
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-9 h-9 border border-neutral-200 dark:border-neutral-800 group-hover:border-blue-400 dark:group-hover:border-blue-500/40 flex items-center justify-center transition-colors duration-200">
+                        <Icon className="w-4 h-4 text-neutral-400 dark:text-neutral-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200" aria-hidden />
+                      </div>
+                      <span className="text-[10px] font-mono text-neutral-300 dark:text-neutral-800 group-hover:text-neutral-400 dark:group-hover:text-neutral-600 transition-colors">{f.tag}</span>
+                    </div>
 
-            Powerful features to supercharge your productivity and reclaim your
-            time.
-          </motion.p>
+                    <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-2 tracking-tight">{f.title}</h3>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-600 leading-relaxed">{f.description}</p>
+                  </motion.article>
+              );
+            })}
+          </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) =>
-          <motion.div
-            key={index}
-            initial={{
-              opacity: 0,
-              y: 20
-            }}
-            whileInView={{
-              opacity: 1,
-              y: 0
-            }}
-            viewport={{
-              once: true
-            }}
-            transition={{
-              duration: 0.5,
-              delay: index * 0.1
-            }}
-            className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300 group">
-
-              <div className="w-12 h-12 rounded-lg bg-cyan-50 flex items-center justify-center mb-6 group-hover:bg-cyan-100 transition-colors">
-                {feature.icon}
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-slate-600 leading-relaxed">
-                {feature.description}
-              </p>
-            </motion.div>
-          )}
-        </div>
-      </div>
-    </section>);
-
+      </section>
+  );
 }

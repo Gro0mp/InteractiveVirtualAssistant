@@ -181,7 +181,7 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '100vh', width: '100%',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'linear-gradient(145deg, #dde1f5 0%, #e8eaf6 40%, #d8ddf0 100%)',
-    fontFamily: "'Manrope', sans-serif",
+    fontFamily: "'DM Mono', 'Fira Code', monospace",
     position: 'relative', overflow: 'hidden', padding: '24px',
   },
   bgOrb1: {

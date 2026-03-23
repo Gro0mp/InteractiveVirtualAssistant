@@ -3,13 +3,14 @@ import { DashboardLayout } from "../components/DashboardLayout.tsx";
 import { Assistant } from "../components/assistant/Assistant.tsx";
 import { AssistantChatBar } from '../components/assistant/AssistantChatBar.tsx';
 import {TTSControls} from "../components/assistant/TTSControls.tsx";
-import { DocumentOrb } from "../components/ui/DocumentOrb.tsx";
-import {EmailOrb} from "../components/ui/EmailOrb.tsx";
-import {TranslateOrb} from "../components/ui/TranslateOrb.tsx";
-import { PhoneCallOrb } from "../components/ui/PhoneCallOrb.tsx";
+import { DocumentOrb } from "../components/ui/orbs/DocumentOrb.tsx";
+import {EmailOrb} from "../components/ui/orbs/EmailOrb.tsx";
+import {TranslateOrb} from "../components/ui/orbs/TranslateOrb.tsx";
+import { MockInterviewOrb } from "../components/ui/orbs/MockInterviewOrb.tsx";
+import {SearchCareersOrb} from "../components/ui/orbs/SearchCareersOrb.tsx";
 import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
-import {CalendarOrb} from "../components/ui/CalendarOrb.tsx";
+import {CalendarOrb} from "../components/ui/orbs/CalendarOrb.tsx";
 import {api, type Message} from "../services/api.ts";
 import {useAuth} from "../context/AuthContext.tsx";
 import {ChatHistoryPanel} from "../components/assistant/ChatHistoryPanel.tsx";
@@ -112,7 +113,7 @@ export function AssistantDemo() {
                     else setAnimation(null)
                 }}
             />
-            <div className="relative w-full overflow-hidden -m-4 sm:-m-6 lg:-m-8 left-5" style={{ height: 'calc(100vh - 4rem)'}}>
+            <div className="relative w-full overflow-hidden -m-4 sm:-m-6 lg:-m-8 left-5 font-[Manrope]" style={{ height: 'calc(100vh - 4rem)'}}>
 
                 {/* Animated tech waves background */}
                 <div className="absolute z-0 inset-0">
@@ -167,10 +168,10 @@ export function AssistantDemo() {
                                 <EmailOrb/>
                             </div>
                             <div className="-translate-x-2 scale-30">
-                                <PhoneCallOrb/>
+                                <MockInterviewOrb/>
                             </div>
                             <div className="-translate-x-12 scale-30">
-                                <EmailOrb/>
+                                <SearchCareersOrb/>
                             </div>
                         </div>
 

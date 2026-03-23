@@ -30,7 +30,13 @@ export function OAuthCallback() {
                         id: Number(id),
                         username: String(username),
                         email: (userData as any).email,
+                        plan: (userData as any).plan,
                     });
+
+                    console.log(id)
+                    console.log(username)
+                    console.log((userData as any).email)
+                    console.log((userData as any).plan)
 
                     navigate('/assistant', { replace: true });
                 } catch (error) {

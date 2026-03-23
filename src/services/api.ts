@@ -1,8 +1,13 @@
 // API service for backend communication
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/v1`;
 
-// Reuse the app-wide User type from AuthContext to avoid mismatches.
-import type { User } from '../context/AuthContext';
+export interface User {
+    id: number;
+    username: string;
+    email: string;
+    plan?: 'free' | 'basic' | 'premium';
+    last_login?: string;
+}
 
 export interface LoginRequest {
     email: string;
@@ -37,10 +42,34 @@ export interface ChatResponse {
     timestamp: string;
 }
 
+export interface InterviewSession {
+    id: number
+    description: string
+    createdAt: string
+    updatedAt: string
+    messages: number
+    status: 'IN_PROGRESS' | 'COMPLETED' | string
+}
+
+export interface InterviewMessage {
+    id: number
+    sessionId: number
+    role: 'INTERVIEWER' | 'CANDIDATE'
+    content: string
+    createdAt: string
+}
+
 // Backend appears to return user fields directly. Keep message optional for compatibility.
 export type AuthResponse = User & {
     message?: string;
 };
+
+export type PaymentResponse = {
+    message?: string
+    success?: boolean
+    sessionId?: string
+
+}
 
 export interface ErrorResponse {
     error?: string;
@@ -121,12 +150,12 @@ class ApiService {
     }
 
     async getCurrentUser(): Promise< User > {
-        const res = await fetch(`${API_BASE_URL}/users/me`, {
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
             method: 'GET',
             credentials: 'include' // send session cookie
         });
-        if (!res.ok) throw new Error('Not authenticated');
-        return res.json();
+        if (!response.ok) throw new Error('Not authenticated');
+        return response.json();
     }
 
     // Get user by ID
@@ -178,6 +207,99 @@ class ApiService {
         return response.text();
     }
 
+    async translateDocument(file: File): Promise<Record<string, string>> {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${API_BASE_URL}/translate/extract`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            throw new Error(text || 'Translation failed');
+        }
+
+        return response.json(); // now returns { "Hello": "(10,20), (100,20)...", ... }
+    }
+
+
+    // Interview session management
+    async createInterviewSession(userId: number, jobDescription: string): Promise<InterviewSession> {
+        const response = await fetch(`${API_BASE_URL}/interview/new-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, jobDescription }),
+            credentials: 'include',
+        })
+
+        if (!response.ok) {
+            // Backend returns JSON like { error: "..." } when 429 or 400.
+            const text = await response.text().catch(() => '')
+            // Surface a stable error code for limit exceeded so UI can branch.
+            if (response.status === 429) throw new Error('LIMIT_EXCEEDED')
+            throw new Error(text || 'Failed to create interview session')
+        }
+
+        const s: any = await response.json()
+        return {
+            id: s.id,
+            description: String(s.description ?? ''),
+            createdAt: String(s.created_at ?? ''),
+            updatedAt: String(s.created_at ?? ''),
+            messages: Number(s.totalMessages ?? 0),
+            status: String(s.status ?? 'IN_PROGRESS'),
+        }
+    }
+
+    async getInterviewSessions(userId: string): Promise<InterviewSession[]> {
+        const response = await fetch(`${API_BASE_URL}/interview/get-sessions/${userId}`, {
+            method: 'GET',
+            credentials: 'include',
+        })
+        if (!response.ok) throw new Error('Failed to retrieve interview sessions')
+
+        const data = await response.json()
+        return (data as any[]).map((s: any) => ({
+            id: s.id,
+            description: String(s.description ?? ''),
+            createdAt: String(s.created_at ?? ''),
+            updatedAt: String(s.created_at ?? ''),
+            messages: Number(s.totalMessages ?? 0),
+            status: String(s.status ?? 'IN_PROGRESS'),
+        }))
+    }
+
+    async deleteInterviewSession(sessionId: number): Promise<void> {
+        const response = await fetch(`${API_BASE_URL}/interview/delete-session/${sessionId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        })
+        if (!response.ok) {
+            const text = await response.text().catch(() => '')
+            throw new Error(text || 'Failed to delete session')
+        }
+    }
+
+    // Interview Session Message Management
+    async getInterviewMessages(sessionId: string): Promise<InterviewMessage[]> {
+        const response = await fetch(`${API_BASE_URL}/interview/get-messages/${sessionId}`, {
+            method: 'GET',
+            credentials: 'include',
+        })
+        if (!response.ok) throw new Error('Failed to retrieve interview messages')
+
+        const data = await response.json()
+        return (data as any[]).map((m: any) => ({
+            id: m.id,
+            sessionId: m.session_id,
+            role: m.role === 'INTERVIEWER' ? 'INTERVIEWER' : 'CANDIDATE',
+            content: String(m.content ?? ''),
+            createdAt: String(m.created_at ?? ''),
+        }))
+    }
 }
 
 export const api = new ApiService();

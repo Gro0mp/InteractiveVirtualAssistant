@@ -1,102 +1,97 @@
 import React from 'react';
-import { Chromium, Github, Linkedin } from 'lucide-react';
+import { Github, Linkedin, Globe } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const footerLinks = [
+  {
+    heading: 'Product',
+    links: [
+      { label: 'Features', href: '#features' },
+      { label: 'How it works', href: '#how-it-works' },
+      { label: 'Pricing', href: '#pricing' },
+    ],
+  },
+  {
+    heading: 'Company',
+    links: [
+      { label: 'About', href: '#' },
+      { label: 'Blog', href: '#' },
+      { label: 'Careers', href: '#' },
+    ],
+  },
+  {
+    heading: 'Legal',
+    links: [
+      { label: 'Privacy', href: '#' },
+      { label: 'Terms', href: '#' },
+      { label: 'Security', href: '#' },
+    ],
+  },
+];
+
+const socials = [
+  { icon: Globe, href: 'https://dwong.net/', label: 'Website' },
+  { icon: Github, href: 'https://github.com/Gro0mp', label: 'GitHub' },
+  { icon: Linkedin, href: 'https://www.linkedin.com/in/denniswong342', label: 'LinkedIn' },
+];
+
 export function Footer() {
   return (
-    <footer className="bg-slate-50 border-t border-slate-200 pt-16 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
-          {/* Brand Column */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="flex items-center justify-center w-8 h-8">
-                <img src={"/logo.png"} className={"scale-250"}/>
+      <footer className="bg-neutral-50 dark:bg-[#0A0A0A] border-t border-neutral-200 dark:border-neutral-900 pt-14 pb-8 transition-colors duration-300" role="contentinfo">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-12 mb-12">
+
+            {/* Brand */}
+            <div className="max-w-xs">
+              <Link to="/" className="flex items-center gap-2.5 mb-5 group" aria-label="IVA home">
+                <div className="w-6 h-6 border border-neutral-300 dark:border-neutral-800 group-hover:border-blue-500 dark:group-hover:border-blue-500/50 flex items-center justify-center transition-colors duration-150">
+                  <img src="/logo.png" alt="" className="scale-[1.6]" aria-hidden />
+                </div>
+                <span className="text-xs font-semibold text-neutral-900 dark:text-white uppercase tracking-widest">IVA</span>
+              </Link>
+              <p className="text-xs text-neutral-500 dark:text-neutral-700 leading-relaxed mb-5 font-mono">
+                AI-powered interview prep. Practice smarter, apply faster, land the role you want.
+              </p>
+              <div className="flex items-center gap-2">
+                {socials.map(({ icon: Icon, href, label }) => (
+                    <a
+                        key={label}
+                        href={href}
+                        aria-label={label}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-7 h-7 border border-neutral-200 dark:border-neutral-800 hover:border-blue-400 dark:hover:border-blue-500/50 flex items-center justify-center text-neutral-400 dark:text-neutral-700 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-150"
+                    >
+                      <Icon className="w-3 h-3" aria-hidden />
+                    </a>
+                ))}
               </div>
-              <span className="text-xl font-bold text-slate-900">IVA</span>
             </div>
-            <p className="text-slate-600 mb-6 max-w-sm">
-              Your intelligent virtual assistant. Automate tasks, manage
-              schedules, and streamline your workflow with AI-powered
-              intelligence.
-            </p>
-            <div className="flex space-x-4">
-              <a
-                href="https://dwong.net/"
-                className="text-slate-400 hover:text-violet-600 transition-colors">
 
-                <Chromium className="w-5 h-5" />
-              </a>
-              <a
-                href="https://github.com/Gro0mp"
-                className="text-slate-400 hover:text-violet-600 transition-colors">
-
-                <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.linkedin.com/in/denniswong342"
-                className="text-slate-400 hover:text-violet-600 transition-colors">
-
-                <Linkedin className="w-5 h-5" />
-              </a>
+            {/* Link columns */}
+            <div className="grid grid-cols-3 gap-10">
+              {footerLinks.map(({ heading, links }) => (
+                  <div key={heading}>
+                    <p className="text-[9px] font-semibold text-neutral-500 dark:text-neutral-600 uppercase tracking-widest font-mono mb-4">{heading}</p>
+                    <ul className="space-y-2.5" role="list">
+                      {links.map(({ label, href }) => (
+                          <li key={label}>
+                            <a href={href} className="text-xs text-neutral-500 dark:text-neutral-700 hover:text-neutral-900 dark:hover:text-white transition-colors duration-150 font-mono">
+                              {label}
+                            </a>
+                          </li>
+                      ))}
+                    </ul>
+                  </div>
+              ))}
             </div>
           </div>
 
-          {/* Links Columns */}
-          {/*<div>*/}
-          {/*  <h3 className="font-semibold text-slate-900 mb-4">Resources</h3>*/}
-          {/*  <ul className="space-y-3">*/}
-          {/*    <li>*/}
-          {/*      <a*/}
-          {/*        href="#"*/}
-          {/*        className="text-slate-600 hover:text-violet-600 transition-colors">*/}
-
-          {/*        Documentation*/}
-          {/*      </a>*/}
-          {/*    </li>*/}
-          {/*    <li>*/}
-          {/*      <a*/}
-          {/*        href="#"*/}
-          {/*        className="text-slate-600 hover:text-violet-600 transition-colors">*/}
-
-          {/*        Help Center*/}
-          {/*      </a>*/}
-          {/*    </li>*/}
-          {/*    <li>*/}
-          {/*      <a*/}
-          {/*        href="#"*/}
-          {/*        className="text-slate-600 hover:text-violet-600 transition-colors">*/}
-
-          {/*        Community*/}
-          {/*      </a>*/}
-          {/*    </li>*/}
-          {/*    <li>*/}
-          {/*      <a*/}
-          {/*        href="#"*/}
-          {/*        className="text-slate-600 hover:text-violet-600 transition-colors">*/}
-
-          {/*        Status*/}
-          {/*      </a>*/}
-          {/*    </li>*/}
-          {/*  </ul>*/}
-          {/*</div>*/}
-        </div>
-
-        <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-slate-500 text-sm mb-4 md:mb-0">
-            © 2026 IVA. All rights reserved.
-          </p>
-          <div className="flex space-x-6 text-sm text-slate-500">
-            <a href="#" className="hover:text-violet-600 transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-violet-600 transition-colors">
-              Terms of Service
-            </a>
-            <a href="#" className="hover:text-violet-600 transition-colors">
-              Security
-            </a>
+          <div className="pt-6 border-t border-neutral-200 dark:border-neutral-900 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <p className="text-[10px] font-mono text-neutral-400 dark:text-neutral-800">© 2026 IVA. All rights reserved.</p>
+            <p className="text-[10px] font-mono text-neutral-400 dark:text-neutral-800">Built for job seekers.</p>
           </div>
         </div>
-      </div>
-    </footer>);
-
+      </footer>
+  );
 }

@@ -3,12 +3,14 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
+import { StripePaymentPage } from "./pages/StripePaymentPage.tsx";
 
 import { DashboardPage } from "./pages/DashboardPage.tsx";
-import { InvoiceManagementPage } from "./pages/InvoiceManagementPage.tsx";
 import { DocumentManagementPage } from "./pages/DocumentManagementPage.tsx";
 import { SettingsPage } from "./pages/SettingsPage.tsx";
 import { AssistantDemo } from "./pages/AssistantDemo.tsx";
+import { TranslateDocumentPage } from "./pages/TranslateDocumentPage.tsx";
+import { InterviewPage } from "./pages/InterviewPage.tsx";
 
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoutes } from "./components/ProtectedRoutes.tsx";
@@ -40,14 +42,19 @@ export function App() {
                     <Route path="/" element={<LandingPageWithOAuth />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignUpPage />} />
+                    <Route path="/payment" element={<StripePaymentPage />} />
 
                     {/* Protected Routes */}
                     <Route element={<ProtectedRoutes/>}>
                         <Route path="/assistant" element={<AssistantDemo />} />
                         <Route path="/dashboard" element={<DashboardPage/>} />
-                        <Route path="/invoices" element={<InvoiceManagementPage/>} />
                         <Route path="/documents" element={<DocumentManagementPage/>} />
+                        <Route path="/translate" element={<TranslateDocumentPage/>} />
                         <Route path="settings" element={<SettingsPage/>}/>
+
+                        {/* Interview */}
+                        <Route path="/interview" element={<InterviewPage />} />
+                        <Route path="/interview/:sessionId" element={<InterviewPage />} />
                     </Route>
 
                 </Routes>

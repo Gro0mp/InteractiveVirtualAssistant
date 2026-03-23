@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 export function DocumentManagementPage() {
     return (
         <DashboardLayout>
-            <div className="flex h-[calc(100vh-8rem)] -m-4 sm:-m-6 lg:-m-8">
+            <div className="flex h-[calc(100vh-8rem)] -m-4 sm:-m-6 lg:-m-8 font-[Manrope]">
                 {/* Main Content Area */}
                 <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-hidden flex flex-col">
                     <div className="mb-6">

@@ -3,13 +3,15 @@ import React, { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
     LayoutDashboard,
-    CheckSquare,
     Calendar,
     MessageSquare,
+    FileText,
     Settings,
     LogOut,
     Menu,
     Bell,
+    User,
+    Languages
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {useAuth} from "../context/AuthContext.tsx";
@@ -19,10 +21,11 @@ interface DashboardLayoutProps {
 }
 
 const navItems = [
-    { icon: LayoutDashboard, label: 'Overview', path: '/dashboard' },
-    { icon: CheckSquare, label: 'AI Assistant', path: '/assistant' },
-    { icon: Calendar, label: 'Documents', path: '/documents' },
-    { icon: MessageSquare, label: 'Invoices', path: '/invoices' },
+    { icon: MessageSquare, label: 'AI Assistant', path: '/assistant' },
+    { icon: LayoutDashboard, label: 'Mock Interview', path: '/interview' },
+    { icon: Calendar, label: 'Calender', path: '/calender' },
+    { icon: Languages, label: 'Translate', path: '/translate' },
+    { icon: FileText, label: 'Documents', path: '/documents' },
     { icon: Settings, label: 'Settings', path: '/settings' },
 ]
 
@@ -33,7 +36,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const navigate = useNavigate()
 
     return (
-        <div className="min-h-screen bg-slate-50 flex">
+        <div className="min-h-screen bg-slate-50 flex font-[Manrope]">
             {/* Overlay \- only when sidebar is open */}
             <AnimatePresence>
                 {isSidebarOpen && (
@@ -59,7 +62,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <div className="h-16 flex items-center px-6 border-b border-slate-100">
                         <Link to="/" className="flex items-center space-x-2 group">
                             <div className="flex items-center justify-center w-8 h-8 group-hover:text-white transition-colors duration-300">
-                                <img src={"/logo.png"} className={"scale-200"}/>
+                                <img src={"/logo.png"} className={"scale-200"} alt="IVA logo" />
                             </div>
                             <span className="text-xl font-bold text-slate-900 tracking-tight">IVA</span>
                         </Link>
@@ -73,10 +76,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                     key={item.path}
                                     to={item.path}
                                     onClick={() => setIsSidebarOpen(false)}
-                                    className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-violet-50 text-violet-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                                    className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-cyan-50 text-cyan-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                                 >
                                     <item.icon
-                                        className={`w-5 h-5 mr-3 ${isActive ? 'text-violet-600' : 'text-slate-400'}`}
+                                        className={`w-5 h-5 mr-3 ${isActive ? 'text-cyan-600' : 'text-slate-400'}`}
                                     />
                                     {item.label}
                                 </Link>
@@ -86,7 +89,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                     <div className="p-4 border-t border-slate-100">
                         <div className="flex items-center p-3 mb-3 rounded-lg bg-slate-50">
-                            <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 font-semibold">
+                            <div className="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 font-semibold">
                                 {user?.username.charAt(0).toUpperCase()}
                             </div>
                             <div className="ml-3 overflow-hidden">
@@ -112,7 +115,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <header className="bg-white/40 backdrop-blue-xl border border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.08)] ring-1 ring-white/20 border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+                <header className="backdrop-blue-xl border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
@@ -125,11 +128,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                     <div className="flex items-center space-x-4">
                         <button
-                            className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors relative">
-                        <Bell className="w-5 h-5" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                            className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer relative">
+                            <Bell className="w-5 h-5"/>
+                            <span
+                                className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                        </button>
+
+                        <button
+                            className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer relative">
+                            <Settings className="w-5 h-5"/>
+
+                        </button>
+
+                        <button
+                            className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer relative">
+                            <User className="w-5 h-5"/>
+
                         </button>
                     </div>
+
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

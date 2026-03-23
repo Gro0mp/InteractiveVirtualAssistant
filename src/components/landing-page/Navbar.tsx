@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, LogOut, User } from 'lucide-react';
+import { Menu, X, LogOut, User, Sun, Moon } from 'lucide-react';
 import { Button } from '../ui/Button.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext.tsx';
+import { useTheme } from '../../context/ThemeContext.tsx';
+
+const navLinks = [
+    { label: 'Features', href: '#features' },
+    { label: 'How it works', href: '#how-it-works' },
+    { label: 'Pricing', href: '#pricing' },
+];
 
 export function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { isAuthenticated, user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
 
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 10);
-        };
-        window.addEventListener('scroll', handleScroll);
+        const handleScroll = () => setIsScrolled(window.scrollY > 12);
+        window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
@@ -25,180 +31,167 @@ export function Navbar() {
 
     return (
         <nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+            role="navigation"
+            aria-label="Main navigation"
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
                 isScrolled || isMobileMenuOpen
-                    ? 'bg-white/80 backdrop-blur-md border-b border-slate-200/50 shadow-sm'
+                    ? 'bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800'
                     : 'bg-transparent'
-            }` }
+            }`}
         >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16 md:h-20">
+            <div className="max-w-6xl mx-auto px-5 sm:px-8">
+                <div className="flex justify-between items-center h-14 md:h-16">
+
                     {/* Logo */}
-                    <Link to="/" className="flex items-center space-x-2 group">
-                        <div className="relative flex items-center justify-center w-8 h-8">
-                            <img src={"/logo.png"} className={"scale-250"}/>
+                    <Link to="/" className="flex items-center gap-2.5 group" aria-label="IVA home">
+                        <div className="w-7 h-7 border border-neutral-300 dark:border-neutral-700 group-hover:border-blue-500 dark:group-hover:border-blue-500 transition-colors duration-150 flex items-center justify-center">
+                            <img src="/logo.png" alt="" className="scale-[1.8]" aria-hidden />
                         </div>
-                        <span className="text-xl font-bold text-slate-900 tracking-tight">
-              IVA
-            </span>
+                        <span className="text-sm font-semibold text-neutral-900 dark:text-white tracking-widest uppercase">IVA</span>
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <div className="hidden md:flex items-center space-x-8">
-                        <a
-                            href="#features"
-                            className="text-sm font-medium text-slate-600 hover:text-violet-600 transition-colors"
-                        >
-                            Features
-                        </a>
-                        <a
-                            href="#how-it-works"
-                            className="text-sm font-medium text-slate-600 hover:text-violet-600 transition-colors"
-                        >
-                            How it works
-                        </a>
-                        <a
-                            href="#pricing"
-                            className="text-sm font-medium text-slate-600 hover:text-violet-600 transition-colors"
-                        >
-                            Pricing
-                        </a>
+                    {/* Desktop nav */}
+                    <div className="hidden md:flex items-center gap-8">
+                        {navLinks.map((link) => (
+                            <a
+                                key={link.href}
+                                href={link.href}
+                                className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors duration-150 tracking-widest uppercase"
+                            >
+                                {link.label}
+                            </a>
+                        ))}
                     </div>
 
-                    {/* Desktop Auth Buttons */}
-                    <div className="hidden md:flex items-center space-x-4">
+                    {/* Desktop right side: theme toggle + auth */}
+                    <div className="hidden md:flex items-center gap-2">
+                        {/* Theme toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            className="w-8 h-8 flex items-center justify-center border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-150"
+                        >
+                            <AnimatePresence mode="wait" initial={false}>
+                                {theme === 'dark' ? (
+                                    <motion.span
+                                        key="sun"
+                                        initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
+                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                        exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
+                                        transition={{ duration: 0.15 }}
+                                    >
+                                        <Sun className="w-3.5 h-3.5" />
+                                    </motion.span>
+                                ) : (
+                                    <motion.span
+                                        key="moon"
+                                        initial={{ opacity: 0, rotate: 30, scale: 0.8 }}
+                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                        exit={{ opacity: 0, rotate: -30, scale: 0.8 }}
+                                        transition={{ duration: 0.15 }}
+                                    >
+                                        <Moon className="w-3.5 h-3.5" />
+                                    </motion.span>
+                                )}
+                            </AnimatePresence>
+                        </button>
+
                         {isAuthenticated ? (
                             <>
-                                <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-cyan-50 border border-gray-100">
-                                    <div className="w-7 h-7 rounded-full bg-cyan-200 flex items-center justify-center">
-                                        <User className="w-4 h-4 text-black-700" />
-                                    </div>
-                                    <span className="text-sm font-medium text-slate-900">
-                    {user?.username}
-                  </span>
+                                <div className="flex items-center gap-2 px-3 py-1.5 border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400">
+                                    <User className="w-3.5 h-3.5" aria-hidden />
+                                    <span>{user?.username}</span>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleLogout}
-                                    leftIcon={<LogOut className="w-4 h-4" />}
-                                >
-                                    Logout
+                                <Button variant="ghost" size="sm" onClick={handleLogout} leftIcon={<LogOut className="w-3.5 h-3.5" />}>
+                                    Sign out
                                 </Button>
                             </>
                         ) : (
                             <>
                                 <Link to="/login">
-                                    <Button variant="ghost" size="sm">
-                                        Log In
-                                    </Button>
+                                    <Button variant="ghost" size="sm">Log in</Button>
                                 </Link>
                                 <Link to="/signup">
-                                    <Button variant="secondary" size="sm">
-                                        Get Started
-                                    </Button>
+                                    <Button variant="secondary" size="sm">Get started</Button>
                                 </Link>
                             </>
                         )}
                     </div>
 
-                    {/* Mobile Menu Button */}
-                    <div className="md:hidden">
+                    {/* Mobile: theme toggle + hamburger */}
+                    <div className="md:hidden flex items-center gap-2">
                         <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="text-slate-600 hover:text-slate-900 p-2"
+                            onClick={toggleTheme}
+                            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
                         >
-                            {isMobileMenuOpen ? (
-                                <X className="w-6 h-6" />
-                            ) : (
-                                <Menu className="w-6 h-6" />
-                            )}
+                            <AnimatePresence mode="wait" initial={false}>
+                                {theme === 'dark' ? (
+                                    <motion.span key="sun" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
+                                        <Sun className="w-4 h-4" />
+                                    </motion.span>
+                                ) : (
+                                    <motion.span key="moon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
+                                        <Moon className="w-4 h-4" />
+                                    </motion.span>
+                                )}
+                            </AnimatePresence>
+                        </button>
+                        <button
+                            className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            aria-expanded={isMobileMenuOpen}
+                            aria-controls="mobile-menu"
+                            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+                        >
+                            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Mobile Menu Drawer */}
+            {/* Mobile menu */}
             <AnimatePresence>
                 {isMobileMenuOpen && (
                     <motion.div
+                        id="mobile-menu"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="md:hidden bg-white border-b border-slate-200 overflow-hidden"
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
+                        className="md:hidden bg-white dark:bg-black border-b border-neutral-200 dark:border-neutral-800 overflow-hidden"
                     >
-                        <div className="px-4 pt-2 pb-6 space-y-4">
-                            <a
-                                href="#features"
-                                className="block py-2 text-base font-medium text-slate-600 hover:text-violet-600"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                                Features
-                            </a>
-                            <a
-                                href="#how-it-works"
-                                className="block py-2 text-base font-medium text-slate-600 hover:text-violet-600"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                                How it works
-                            </a>
-                            <a
-                                href="#"
-                                className="block py-2 text-base font-medium text-slate-600 hover:text-violet-600"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                                Pricing
-                            </a>
-                            <a
-                                href="#"
-                                className="block py-2 text-base font-medium text-slate-600 hover:text-violet-600"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                                Blog
-                            </a>
-
-                            <div className="pt-4 border-t border-slate-200">
+                        <div className="px-5 pt-3 pb-6 space-y-1">
+                            {navLinks.map((link) => (
+                                <a
+                                    key={link.href}
+                                    href={link.href}
+                                    className="block py-2.5 text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-white tracking-widest uppercase transition-colors"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    {link.label}
+                                </a>
+                            ))}
+                            <div className="pt-4 mt-1 border-t border-neutral-200 dark:border-neutral-800 space-y-2">
                                 {isAuthenticated ? (
-                                    <div className="space-y-3">
-                                        <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-violet-50 border border-violet-100">
-                                            <div className="w-8 h-8 rounded-full bg-violet-200 flex items-center justify-center">
-                                                <User className="w-5 h-5 text-violet-700" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-slate-900">
-                                                    {user?.username}
-                                                </p>
-                                                <p className="text-xs text-slate-500">{user?.email}</p>
-                                            </div>
+                                    <>
+                                        <div className="flex items-center gap-2 px-3 py-2 border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400">
+                                            <User className="w-3.5 h-3.5" />
+                                            <span>{user?.username}</span>
                                         </div>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-center"
-                                            onClick={handleLogout}
-                                            leftIcon={<LogOut className="w-4 h-4" />}
-                                        >
-                                            Logout
+                                        <Button variant="outline" className="w-full justify-center" onClick={handleLogout} leftIcon={<LogOut className="w-3.5 h-3.5" />}>
+                                            Sign out
                                         </Button>
-                                    </div>
+                                    </>
                                 ) : (
-                                    <div className="flex flex-col space-y-3">
-                                        <Link
-                                            to="/login"
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                        >
-                                            <Button variant="outline" className="w-full justify-center">
-                                                Log In
-                                            </Button>
+                                    <>
+                                        <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                                            <Button variant="outline" className="w-full justify-center">Log in</Button>
                                         </Link>
-                                        <Link
-                                            to="/signup"
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                        >
-                                            <Button variant="primary" className="w-full justify-center">
-                                                Get Started
-                                            </Button>
+                                        <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                                            <Button variant="secondary" className="w-full justify-center">Get started</Button>
                                         </Link>
-                                    </div>
+                                    </>
                                 )}
                             </div>
                         </div>

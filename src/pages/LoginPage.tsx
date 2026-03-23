@@ -41,6 +41,7 @@ export function LoginPage() {
   };
 
   return (
+
       <div style={styles.page}>
         {/* Soft periwinkle mesh background */}
         <div style={styles.bgOrb1} />
@@ -158,7 +159,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     background: 'linear-gradient(145deg, #dde1f5 0%, #e8eaf6 40%, #d8ddf0 100%)',
-    fontFamily: "'Manrope', sans-serif",
+    fontFamily: "'DM Mono', 'Fira Code', monospace",
     position: 'relative',
     overflow: 'hidden',
     padding: '24px',

@@ -1,17 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api';
-
-export interface User {
-    id: number;
-    username: string;
-    email: string;
-    last_login?: string;
-}
+import { api, type User } from '../services/api';
 
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
-    isPremium?: boolean; // Optional, can be set based on user data
     isLoading: boolean;
     login: (user: User) => void;
     logout: () => void;
