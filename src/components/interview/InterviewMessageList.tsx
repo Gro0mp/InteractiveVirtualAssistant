@@ -1,20 +1,19 @@
 import React, { useEffect, useMemo, useRef } from 'react'
-import type { Message } from '../../services/api'
+import type {InterviewMessageHistoryListResponse} from '../../services/api'
 
 type Props = {
-    messages: Message[]
+    messages: InterviewMessageHistoryListResponse[]
 }
 
 export function InterviewMessageList({ messages }: Props) {
     const bottomRef = useRef<HTMLDivElement>(null)
 
     const ordered = useMemo(() => {
-        // If createdAt is missing on some legacy messages, keep stable order.
-        return [...messages].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
+        // createdAt is a numeric timestamp (Date.now()) so subtraction is always valid
+        return [...messages].sort((a, b) => (Number(a.createdAt) ?? 0) - (Number(b.createdAt)?? 0))
     }, [messages])
 
     useEffect(() => {
-        // Scroll to bottom smoothly on new message
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 30)
     }, [ordered.length])
 
@@ -32,8 +31,8 @@ export function InterviewMessageList({ messages }: Props) {
     )
 }
 
-function InterviewBubble({ message }: { message: Message }) {
-    const isUser = message.role === 'user'
+function InterviewBubble({ message }: { message: InterviewMessageHistoryListResponse }) {
+    const isUser = message.role === 'CANDIDATE'
 
     return (
         <div className={['flex', isUser ? 'justify-end' : 'justify-start'].join(' ')}>

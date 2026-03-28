@@ -20,7 +20,8 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         let cancelled = false;
 
         const restore = async () => {
-            const storedUser = localStorage.getItem('user'); // Try getting user from localStorage first
+            // Try restoring from localStorage first for a fast initial render
+            const storedUser = localStorage.getItem('user');
             if (storedUser) {
                 try {
                     const parsed = JSON.parse(storedUser) as User;
@@ -28,12 +29,12 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
                         setUser(parsed);
                         setIsLoading(false);
                     }
-                } catch (error) {
-                    console.error('Failed to parse stored user:', error);
+                } catch {
                     localStorage.removeItem('user');
                 }
             }
-            // If no valid user in localStorage, try fetching from backend
+
+            // Always verify with the backend — the session cookie is the source of truth
             try {
                 const me = await api.getCurrentUser();
                 if (!cancelled) {
@@ -42,21 +43,14 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
                 }
             } catch {
                 localStorage.removeItem('user');
-                if (!cancelled) {
-                    setUser(null);
-                    setIsLoading(false);
-                }
+                if (!cancelled) setUser(null);
             } finally {
-                if (!cancelled) {
-                    setIsLoading(false);
-                }
+                if (!cancelled) setIsLoading(false);
             }
         };
 
-        restore().then(r => (r));
-        return () => {
-            cancelled = true;
-        };
+        void restore();
+        return () => { cancelled = true; };
     }, []);
 
     const login = (user: User) => {
@@ -65,10 +59,18 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         setIsLoading(false);
     };
 
+    /**
+     * FIX: was only clearing local state / localStorage, leaving the server-side
+     * session cookie alive. The backend's /logout endpoint must be called so Spring
+     * Security invalidates the session. We clear local state regardless of whether
+     * the API call succeeds, so a network failure doesn't strand the user logged in
+     * locally with a dead session.
+     */
     const logout = () => {
         setUser(null);
         localStorage.removeItem('user');
         setIsLoading(false);
+        api.logout().catch((err) => console.error('Server logout failed:', err));
     };
 
     const refreshUser = async () => {
@@ -83,14 +85,9 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ 
-            user, 
-            isAuthenticated: !!user, 
-            isLoading,
-            login,
-            logout,
-            refreshUser,
-        }}>
+        <AuthContext.Provider
+            value={{ user, isAuthenticated: !!user, isLoading, login, logout, refreshUser }}
+        >
             {children}
         </AuthContext.Provider>
     );

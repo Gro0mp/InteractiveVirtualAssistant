@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { MessageSquare, X, ChevronDown } from 'lucide-react'
-import type { Message } from '../../services/api.ts'
+import type { ChatHistoryListResponse } from '../../services/api.ts'
 
 interface ChatHistoryPanelProps {
-    messages: Message[]
+    messages: ChatHistoryListResponse[]
 }
 
 export function ChatHistoryPanel({ messages }: ChatHistoryPanelProps) {
@@ -129,8 +129,8 @@ export function ChatHistoryPanel({ messages }: ChatHistoryPanelProps) {
     )
 }
 
-function MessageBubble({ message }: { message: Message }) {
-    const isUser = message.role === 'user'
+function MessageBubble({ message }: { message: ChatHistoryListResponse }) {
+    const isUser = message.role === 'USER'
 
     return (
         <div className={['flex gap-2', isUser ? 'flex-row-reverse' : 'flex-row'].join(' ')}>

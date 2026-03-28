@@ -2,10 +2,10 @@ import React, { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Clock, CornerDownRight, Plus, Trash2 } from 'lucide-react'
 import { Button } from '../ui/Button'
-import type { InterviewSession } from '../../services/api'
+import type { InterviewSessionResponse } from '../../services/api'
 
 type Props = {
-    sessions: InterviewSession[]
+    sessions: InterviewSessionResponse[]
     isLoading?: boolean
     onOpen: (id: number) => void
     onCreateNew: () => void
@@ -15,7 +15,7 @@ type Props = {
 export function InterviewSelectionPanel({ sessions, isLoading, onOpen, onCreateNew, onDelete }: Props) {
     const [query, setQuery] = useState('')
 
-    const getDescription = (s: InterviewSession) => (s.description?.trim() ? s.description : 'Mock Interview')
+    const getDescription = (s: InterviewSessionResponse) => (s.description?.trim() ? s.description : 'Mock Interview')
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase()

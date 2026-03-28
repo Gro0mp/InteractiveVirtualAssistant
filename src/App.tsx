@@ -8,7 +8,7 @@ import { StripePaymentPage } from "./pages/StripePaymentPage.tsx";
 import { DashboardPage } from "./pages/DashboardPage.tsx";
 import { DocumentManagementPage } from "./pages/DocumentManagementPage.tsx";
 import { SettingsPage } from "./pages/SettingsPage.tsx";
-import { AssistantDemo } from "./pages/AssistantDemo.tsx";
+import { AssistantPage } from "./pages/AssistantPage.tsx";
 import { TranslateDocumentPage } from "./pages/TranslateDocumentPage.tsx";
 import { InterviewPage } from "./pages/InterviewPage.tsx";
 
@@ -43,10 +43,11 @@ export function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignUpPage />} />
                     <Route path="/payment" element={<StripePaymentPage />} />
+                    <Route path="/assistant" element={<AssistantPage />} />
 
                     {/* Protected Routes */}
                     <Route element={<ProtectedRoutes/>}>
-                        <Route path="/assistant" element={<AssistantDemo />} />
+                        {/*<Route path="/assistant" element={<AssistantPage />} />*/}
                         <Route path="/dashboard" element={<DashboardPage/>} />
                         <Route path="/documents" element={<DocumentManagementPage/>} />
                         <Route path="/translate" element={<TranslateDocumentPage/>} />

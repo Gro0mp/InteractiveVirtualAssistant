@@ -6,9 +6,10 @@ import { InterviewChatPanel } from '../components/interview/InterviewChatPanel'
 import { InterviewSetupPanel } from '../components/interview/InterviewSetupPanel'
 import { InterviewSelectionPanel } from '../components/interview/InterviewSelectionPanel'
 import type { InterviewSetupValue } from '../components/interview/InterviewSetupPanel'
-import type { InterviewSession, Message } from '../services/api'
+import type { InterviewMessageHistoryListResponse, InterviewSessionResponse } from '../services/api'
 import { api } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import {TTSControls} from "../components/assistant/TTSControls.tsx";
 
 type View = 'selection' | 'setup' | 'chat'
 
@@ -16,16 +17,21 @@ export function InterviewPage() {
     const params = useParams<{ sessionId?: string }>()
     const navigate = useNavigate()
     const { user } = useAuth()
+    const [audio, setAudio] = useState<string | null>(null);
 
-    // ── view state ──────────────────────────────────────────────────────────
+    // ── view state ────────────────────────────────────────────────────────────
     const [view, setView] = useState<View>(() => {
         if (!params.sessionId || params.sessionId === 'new') return 'setup'
         return 'selection'
     })
 
-    // ── session list ─────────────────────────────────────────────────────────
-    const [sessions, setSessions] = useState<InterviewSession[]>([])
+    // ── session list ──────────────────────────────────────────────────────────
+    const [sessions, setSessions] = useState<InterviewSessionResponse[]>([])
     const [isLoadingSessions, setIsLoadingSessions] = useState(false)
+
+    // ── interview state ───────────────────────────────────────────────────────
+    const [isCompleted, setIsCompleted] = useState(false)
+    const [questionProgress, setQuestionProgress] = useState<{ answered: number; total: number } | null>(null)
 
     const loadSessions = async () => {
         if (!user?.id) return
@@ -40,31 +46,33 @@ export function InterviewPage() {
         }
     }
 
-    // Load sessions on mount and whenever we return to selection view
     useEffect(() => {
         if (view === 'selection') void loadSessions()
     }, [view, user?.id])
 
-    // ── setup state ──────────────────────────────────────────────────────────
+    // ── setup state ───────────────────────────────────────────────────────────
     const [setup, setSetup] = useState<InterviewSetupValue | null>(null)
 
-    // ── chat state ───────────────────────────────────────────────────────────
+    // ── chat state ────────────────────────────────────────────────────────────
     const [activeSessionId, setActiveSessionId] = useState<number | null>(null)
-    const [messages, setMessages] = useState<Message[]>([])
+
+    /**
+     * FIX: was typed as InterviewMessageHistoryListResponse[] but used as ChatHistoryMessage[]
+     * throughout (role: 'user'/'assistant', createdAt: number). Using ChatHistoryMessage[]
+     * consistently so components and sort logic all agree on the shape.
+     */
+    const [messages, setMessages] = useState<InterviewMessageHistoryListResponse[]>([])
     const [isSending, setIsSending] = useState(false)
     const [animation, setAnimation] = useState<string | null>(null)
 
-    // ── route → view sync ────────────────────────────────────────────────────
+    // ── route → view sync ─────────────────────────────────────────────────────
     useEffect(() => {
         const sid = params.sessionId
         if (!sid) {
             setView('selection')
             return
         }
-
         if (sid === 'new') {
-            // Important: if a previous session left us in a loading state,
-            // reset it when starting a new interview.
             setIsSending(false)
             setAnimation(null)
             setMessages([])
@@ -72,23 +80,19 @@ export function InterviewPage() {
             setView('setup')
             return
         }
-
         const parsed = Number(sid)
         if (!Number.isFinite(parsed)) {
-            // If someone navigates to a non-numeric id, fall back to selection.
             navigate('/interview', { replace: true })
             return
         }
-
         setActiveSessionId(parsed)
         setView('chat')
     }, [params.sessionId, navigate])
 
-    // ── handlers ─────────────────────────────────────────────────────────────
+    // ── handlers ──────────────────────────────────────────────────────────────
     const handleCreateNew = () => {
         setSetup(null)
         navigate('/interview/new', { replace: true })
-        // view will update via the useEffect above
     }
 
     const handleOpenSession = (sessionId: number) => {
@@ -96,6 +100,28 @@ export function InterviewPage() {
         setMessages([])
         navigate(`/interview/${sessionId}`, { replace: true })
     }
+
+    // ── load history when entering chat view ──────────────────────────────────
+    useEffect(() => {
+        if (!activeSessionId || view !== 'chat') return
+        const loadHistory = async () => {
+            try {
+                const history = await api.getInterviewMessages(activeSessionId)
+
+                const mapped: InterviewMessageHistoryListResponse[] = history.map((m) => ({
+                    id: m.id,
+                    sessionId: m.sessionId,
+                    role: m.role === 'INTERVIEWER' ? 'INTERVIEWER' : 'CANDIDATE',
+                    content: m.content,
+                    createdAt: m.createdAt,
+                }))
+                setMessages(mapped)
+            } catch (e) {
+                console.error('Failed to load message history:', e)
+            }
+        }
+        void loadHistory()
+    }, [activeSessionId, view])
 
     const handleDeleteSession = async (id: number) => {
         try {
@@ -109,7 +135,6 @@ export function InterviewPage() {
     const handleStart = async (nextSetup: InterviewSetupValue) => {
         if (!user?.id || isSending) return
 
-        // Create session: show loading, but don't keep isSending locked while we also call sendMessage.
         setIsSending(true)
         setAnimation('Thinking')
 
@@ -119,14 +144,12 @@ export function InterviewPage() {
             setMessages([])
             navigate(`/interview/${session.id}`, { replace: true })
 
-            // Stop the "Start interview" button loader immediately after session creation.
-            // sendMessage will manage its own loading state.
             setIsSending(false)
             setAnimation(null)
+            setIsCompleted(false)
+            setQuestionProgress(null)
 
-            const startingMsg = `You are interviewing for the following job:\n\n${session.description}\n\nStart asking questions to the interviewer!`
-            // Kick off the first AI message using the job description
-            await sendMessage(session.id, startingMsg)
+            await sendMessage(session.id, 'Hello, I am ready to begin the interview.')
         } catch (err) {
             if (err instanceof Error && err.message === 'LIMIT_EXCEEDED') {
                 alert('You have reached your interview limit. Upgrade your plan to create more.')
@@ -142,27 +165,41 @@ export function InterviewPage() {
     const sendMessage = async (_sessionId: number, text: string) => {
         if (!user?.id) return
 
-        const userMsg: Message = {
-            userId: String(user.id),
-            role: 'user',
+        const userMsg: InterviewMessageHistoryListResponse = {
+            id: user.id,
+            sessionId: _sessionId,
+            role: 'CANDIDATE',
             content: text,
-            createdAt: Date.now(),
+            createdAt: new Date().toISOString()
         }
-        setMessages(prev => [...prev, userMsg])
+        setMessages((prev) => [...prev, userMsg])
         setIsSending(true)
         setAnimation('Thinking')
 
         try {
-            const saved = await api.processMessage(userMsg)
-            const assistantMsg: Message = {
-                userId: String(user.id),
-                role: 'assistant',
-                content: saved.response,
-                createdAt: Date.now(),
+            const saved = await api.sendInterviewMessage(_sessionId, user.id, text)
+
+            const interviewerMsg: InterviewMessageHistoryListResponse = {
+                id: user.id,
+                sessionId: _sessionId,
+                role: 'INTERVIEWER',
+                content: saved.responseMessage,
+                createdAt: new Date().toISOString()
             }
-            setMessages(prev => [...prev, assistantMsg])
+            setMessages((prev) => [...prev, interviewerMsg])
+
+            if (saved.completed) {
+                setIsCompleted(true)
+            }
+            if (saved.audioUrl) {
+                setAudio(saved.audioUrl)
+            }
+            setQuestionProgress({
+                answered: saved.questionsAnswered,
+                total: saved.totalQuestions,
+            })
         } catch (err) {
-            console.error('Failed to send message:', err)
+            console.error('Failed to send interview message:', err)
         } finally {
             setAnimation(null)
             setIsSending(false)
@@ -178,7 +215,7 @@ export function InterviewPage() {
         navigate('/interview', { replace: true })
     }
 
-    // ── right panel ──────────────────────────────────────────────────────────
+    // ── right panel ───────────────────────────────────────────────────────────
     const rightPanel = () => {
         switch (view) {
             case 'selection':
@@ -205,10 +242,15 @@ export function InterviewPage() {
                 return (
                     <InterviewChatPanel
                         title="Mock Interview"
-                        subtitle="Ask questions, practice answers, and get feedback."
+                        subtitle={
+                            questionProgress
+                                ? `Question ${questionProgress.answered} of ${questionProgress.total}`
+                                : 'Ask questions, practice answers, and get feedback.'
+                        }
                         messages={messages}
                         onSend={handleSend}
-                        disabled={isSending}
+                        disabled={isSending || isCompleted}
+                        isCompleted={isCompleted}
                         onBack={() => navigate('/interview')}
                     />
                 )
@@ -217,26 +259,28 @@ export function InterviewPage() {
 
     return (
         <DashboardLayout>
+            <TTSControls
+                audioData={audio}
+                autoPlay={true}
+                onPlayingStateChange={(playing) => {
+                    if (playing) setAnimation('Talking');
+                    else setAnimation(null);
+                }}
+            />
             <div className="relative -m-4 sm:-m-6 lg:-m-8 h-[calc(100vh-4rem)] font-[Manrope] overflow-hidden">
                 <div className="pointer-events-none absolute inset-0 -z-10">
                     <div className="absolute inset-0 bg-[radial-gradient(900px_520px_at_20%_0%,rgba(43,109,255,0.10),transparent_60%),radial-gradient(900px_620px_at_80%_10%,rgba(109,224,255,0.12),transparent_55%)]" />
                 </div>
-
                 <div className="h-full w-full px-4 sm:px-6 lg:px-8 py-6">
                     <div className="mx-auto max-w-[1400px] h-full grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-4">
-
-                        {/* Left — never unmounts */}
                         <div className="min-h-0">
                             <Suspense fallback={null}>
                                 <InterviewScene animationName={animation ?? undefined} />
                             </Suspense>
                         </div>
-
-                        {/* Right — swaps between views */}
                         <div className="min-h-0">
                             {rightPanel()}
                         </div>
-
                     </div>
                 </div>
             </div>

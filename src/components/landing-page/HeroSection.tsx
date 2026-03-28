@@ -128,6 +128,7 @@ export function HeroSection() {
                         </motion.div>
                     </div>
 
+
                     {/* Right — terminal-style scorecard */}
                     <motion.div
                         initial={{opacity: 0, y: 20}}
