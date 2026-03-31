@@ -1,21 +1,26 @@
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
-import {useAuth} from "../context/AuthContext.tsx";
+"use client";
 
-export function ProtectedRoutes() {
-    const { isAuthenticated, isLoading } = useAuth();
+import { useRouter } from "next/navigation";
+import React, { useEffect, type ReactNode } from "react";
+import { useAuth } from "../context/AuthContext";
 
-    if (isLoading) {
-        return (
-            <div className="min-h-[50vh] w-full grid place-items-center text-slate-500">
-                Loading...
-            </div>
-        );
-    }
+export default function ProtectedRoute({
+                                           children,
+                                       }: {
+    children: ReactNode;
+}) {
+    const { user, isLoading } = useAuth();
+    const router = useRouter();
 
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />; // Redirect to login if not authenticated
-    }
+    useEffect(() => {
+        if (!isLoading && !user) {
+            router.replace("/login");
+        }
+    }, [user, isLoading, router]);
 
-    return <Outlet />; // Render child routes if authenticated
- }
+    if (isLoading) return <p>Loading...</p>;
+
+    if (!user) return null;
+
+    return <>{children}</>;
+}

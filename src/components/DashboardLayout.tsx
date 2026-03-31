@@ -1,6 +1,9 @@
+'use client'
+
 // src/components/DashboardLayout.tsx
 import React, { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import {
     LayoutDashboard,
     Calendar,
@@ -16,8 +19,8 @@ import {
     Moon,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from "../context/AuthContext.tsx"
-import { useTheme, ThemeProvider } from "../context/ThemeContext.tsx"
+import { useAuth } from '../context/AuthContext'
+import { useTheme, ThemeProvider } from '../context/ThemeContext'
 
 interface DashboardLayoutProps {
     children: React.ReactNode
@@ -36,8 +39,8 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const { user, logout } = useAuth()
     const { theme, toggleTheme } = useTheme()
-    const location = useLocation()
-    const navigate = useNavigate()
+    const pathname = usePathname()
+    const router = useRouter()
 
     return (
         <div
@@ -71,12 +74,12 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                     {/* Logo */}
                     <div className="h-14 flex items-center px-5 border-b border-neutral-100 dark:border-neutral-800">
                         <Link
-                            to="/"
+                            href="/"
                             className="flex items-center gap-2.5 group"
                             onClick={() => setIsSidebarOpen(false)}
                         >
                             <div className="w-6 h-6 border border-neutral-300 dark:border-neutral-700 group-hover:border-blue-500 dark:group-hover:border-blue-500 flex items-center justify-center transition-colors duration-150">
-                                <img src="/logo.png" className="scale-[1.6]" alt="IVA logo" aria-hidden />
+                                <img src="/logo.png" className="scale-[1.6]" alt="IVA logo" />
                             </div>
                             <span className="text-xs font-semibold text-neutral-900 dark:text-white uppercase tracking-widest">
                                 IVA
@@ -90,11 +93,11 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                             Navigation
                         </p>
                         {navItems.map((item) => {
-                            const isActive = location.pathname === item.path
+                            const isActive = pathname === item.path
                             return (
                                 <Link
                                     key={item.path}
-                                    to={item.path}
+                                    href={item.path}
                                     onClick={() => setIsSidebarOpen(false)}
                                     className={[
                                         'flex items-center px-3 py-2 text-xs font-medium transition-colors duration-150 border-l-2',
@@ -102,7 +105,6 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                                             ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-500'
                                             : 'text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-neutral-900 dark:hover:text-white border-transparent',
                                     ].join(' ')}
-                                    style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif" }}
                                 >
                                     <item.icon
                                         className={`w-4 h-4 mr-3 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-neutral-400 dark:text-neutral-600'}`}
@@ -134,7 +136,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                             onClick={() => {
                                 logout()
                                 setIsSidebarOpen(false)
-                                navigate('/login', { replace: true })
+                                router.replace('/login')
                             }}
                             className="w-full flex items-center px-3 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors duration-150"
                         >
@@ -158,7 +160,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                     </button>
 
                     <div className="flex items-center gap-1">
-                        {/* Theme toggle — same pattern as Navbar.tsx */}
+                        {/* Theme toggle */}
                         <button
                             onClick={toggleTheme}
                             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -221,12 +223,8 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     )
 }
 
-// Wraps with ThemeProvider so the dashboard has its own persistent theme context,
-// mirroring the same pattern used in LandingPage.tsx
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
-        <ThemeProvider>
-            <DashboardLayoutInner>{children}</DashboardLayoutInner>
-        </ThemeProvider>
+        <DashboardLayoutInner>{children}</DashboardLayoutInner>
     )
 }

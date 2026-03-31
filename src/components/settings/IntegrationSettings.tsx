@@ -19,7 +19,7 @@ const integrations = [
     {
         id: 'gmail',
         name: 'Notion',
-        description: 'Export summaries and notes directly to Notion pages.',
+        description: 'Export summaries and notes directly to Notion custompages.',
         icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg',
         connected: false,
     },

@@ -1,8 +1,7 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '../ui/Button.tsx';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 export function CTASection() {
     return (
@@ -74,12 +73,13 @@ export function CTASection() {
                             transition={{ duration: 0.4, delay: 0.15 }}
                             className="flex flex-wrap gap-3"
                         >
-                            <Link to="/signup">
+                            <Link href="/signup">
                                 <Button size="lg" variant="secondary" rightIcon={<ArrowRight className="w-4 h-4" />}>
                                     Get started free
                                 </Button>
                             </Link>
-                            <Link to="/login">
+
+                            <Link href="/login">
                                 <Button size="lg" variant="outline">
                                     Log in
                                 </Button>

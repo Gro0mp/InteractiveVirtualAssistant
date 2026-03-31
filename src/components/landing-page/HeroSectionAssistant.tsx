@@ -1,4 +1,6 @@
-import React, { Suspense, useEffect, useRef } from 'react'
+'use client'
+
+import { Suspense, useEffect, useRef } from 'react'
 import {Canvas} from '@react-three/fiber'
 import { Environment, useAnimations, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'

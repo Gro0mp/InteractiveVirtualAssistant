@@ -1,7 +1,6 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Minus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Button } from '../ui/Button.tsx';
 
 type PricingPlan = {
@@ -129,7 +128,7 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
                     ))}
                 </ul>
 
-                <Link to={plan.ctaHref} className="block">
+                <Link href={plan.ctaHref} className="block">
                     <Button size="lg" variant={plan.highlighted ? 'primary' : 'outline'} className="w-full">
                         {plan.ctaLabel}
                     </Button>

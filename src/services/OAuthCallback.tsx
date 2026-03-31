@@ -1,60 +1,37 @@
-// src/services/OAuthCallback.tsx
-import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { api } from './api';
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useAuth } from '../context/AuthContext'
+import { api } from './api'
 
 export function OAuthCallback() {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { login } = useAuth();
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const { login } = useAuth()
 
     useEffect(() => {
-        const handleOAuthCallback = async () => {
-            const params = new URLSearchParams(location.search);
-            const oauthSuccess = params.get('oauth');
+        if (searchParams.get('oauth') !== 'success') return
 
-            if (oauthSuccess === 'success') {
-                try {
-                    const userData = await api.getCurrentUser();
-
-                    // Prefer backend-provided id; otherwise fallback to OAuth-provider fields if present
-                    const id = (userData as any).id ?? (userData as any).client_id ?? (userData as any).sub;
-
-                    const username =
-                        (userData as any).username ??
-                        (userData as any).name ??
-                        (userData as any).email?.split('@')[0];
-
-                    login({
-                        id: Number(id),
-                        username: String(username),
-                        email: (userData as any).email,
-                        plan: (userData as any).plan,
-                    });
-
-                    console.log(id)
-                    console.log(username)
-                    console.log((userData as any).email)
-                    console.log((userData as any).plan)
-
-                    navigate('/assistant', { replace: true });
-                } catch (error) {
-                    console.error('Error handling OAuth callback:', error);
-                    navigate('/login', { replace: true });
-                }
+        const handleOAuth = async () => {
+            try {
+                const user = await api.getCurrentUser()
+                login(user)
+                router.replace('/assistant')
+            } catch {
+                router.replace('/login')
             }
-        };
+        }
 
-        handleOAuthCallback().then(r => r);
-    }, [location, login, navigate]);
+        void handleOAuth()
+    }, [searchParams, login, router])
 
     return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: '18px', color: '#64748b' }}>
-            <div style={{ textAlign: 'center' }}>
-                <div style={{ marginBottom: '16px', fontSize: '48px' }}></div>
-                <div>Completing sign in...</div>
+        <div className="min-h-screen grid place-items-center text-neutral-500 font-mono text-sm">
+            <div className="flex flex-col items-center gap-3">
+                <span className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+                Completing sign in…
             </div>
         </div>
-    );
+    )
 }

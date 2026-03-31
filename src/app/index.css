@@ -1,0 +1,85 @@
+/* URL IMPORTS (SUCH AS FONT IMPORTS) SHOULD BE KEPT ABOVE TAILWIND IMPORTS - DO NOT DELETE THIS COMMENT */
+
+@import url('https://fonts.googleapis.com/css2?family=Doto:wght@100..900&family=Funnel+Display:wght@300..800&family=Manrope:wght@200..800&family=Noto+Sans+JP:wght@100..900&family=Space+Grotesk:wght@300..700&display=swap');
+
+/* PLEASE NOTE: THESE TAILWIND IMPORTS SHOULD NEVER BE DELETED - DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss';
+@import 'tailwindcss/utilities';
+/* DO NOT DELETE THESE TAILWIND IMPORTS, OTHERWISE THE STYLING WILL NOT RENDER AT ALL - DO NOT DELETE THIS COMMENT */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Ensure base backgrounds are correct before app hydration (prevents white flash in dark mode). */
+html, body {
+    background: #ffffff;
+}
+html.dark, html.dark body {
+    background: #0A0A0A;
+}
+
+/* Dark mode is controlled via Tailwind's `darkMode: 'class'` and a `.dark` class on <html>. */
+
+/* ── Liquid-glass specular sheens (used by AssistantChatBar) ───────── */
+
+.glass-navbar {
+    position: relative; /* keep for pseudo-element */
+    background: linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0.35));
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
+    border-bottom: 1px solid rgba(15,23,42,0.06);
+    box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+    transition: background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    overflow: hidden;
+}
+
+/* dark mode variant (expects `html` to have `dark` class) */
+.dark .glass-navbar {
+    background: linear-gradient(180deg, rgba(10,10,12,0.60), rgba(10,10,12,0.36));
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.6);
+}
+
+/* subtle moving sheen for a liquid feel */
+.glass-navbar::before {
+    content: "";
+    position: absolute;
+    left: -40%;
+    top: -20%;
+    width: 160%;
+    height: 140%;
+    background: linear-gradient(120deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.04) 100%);
+    transform: rotate(-8deg);
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    opacity: 0.9;
+    transition: transform 0.9s cubic-bezier(.2,.9,.2,1);
+    will-change: transform;
+}
+
+/* nudge sheen on menu open / hover for life */
+.glass-navbar:hover::before,
+.glass-navbar[data-open="true"]::before {
+    transform: translateX(20%) rotate(-8deg);
+}
+
+/* a faint inner border highlight */
+.glass-navbar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-top: 1px solid rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(0,0,0,0.02);
+    mix-blend-mode: screen;
+    opacity: 0.7;
+}
+
+/* small responsive tweak so blur less aggressive on tiny devices */
+@media (max-width: 420px) {
+    .glass-navbar {
+        -webkit-backdrop-filter: blur(7px) saturate(110%);
+        backdrop-filter: blur(7px) saturate(110%);
+    }
+}
+
+

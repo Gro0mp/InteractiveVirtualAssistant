@@ -1,49 +1,54 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+'use client'
 
-type Theme = 'dark' | 'light';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+
+type Theme = 'dark' | 'light'
 
 interface ThemeContextValue {
-    theme: Theme;
-    toggleTheme: () => void;
+    theme: Theme
+    toggleTheme: () => void
 }
 
-const ThemeContext = createContext<ThemeContextValue>({
-    theme: 'dark',
-    toggleTheme: () => {},
-});
+const ThemeContext = createContext<ThemeContextValue>({ theme: 'dark', toggleTheme: () => {} })
+
+function normalizeTheme(v: unknown): Theme {
+    return v === 'light' ? 'light' : 'dark'
+}
+
+function applyThemeToRoot(theme: Theme) {
+    const root = document.documentElement
+    root.classList.toggle('dark', theme === 'dark')
+    root.classList.toggle('light', theme === 'light')
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [theme, setTheme] = useState<Theme>(() => {
         try {
-            return (localStorage.getItem('iva-theme') as Theme) ?? 'dark';
+            return normalizeTheme(localStorage.getItem('iva-theme'))
         } catch {
-            return 'dark';
+            return 'dark'
         }
-    });
+    })
+
+    // Apply ASAP to avoid a "flash" where the page paints light then flips dark.
+    useLayoutEffect(() => {
+        applyThemeToRoot(theme)
+    }, [theme])
 
     useEffect(() => {
-        const root = document.documentElement;
-        if (theme === 'light') {
-            root.classList.add('light');
-            root.classList.remove('dark');
-        } else {
-            root.classList.add('dark');
-            root.classList.remove('light');
-        }
         try {
-            localStorage.setItem('iva-theme', theme);
-        } catch {}
-    }, [theme]);
+            localStorage.setItem('iva-theme', theme)
+        } catch {
+            // ignore
+        }
+    }, [theme])
 
-    const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+    const value = useMemo<ThemeContextValue>(() => ({
+        theme,
+        toggleTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')),
+    }), [theme])
 
-    return (
-        <ThemeContext.Provider value={{ theme, toggleTheme }}>
-            {children}
-        </ThemeContext.Provider>
-    );
+    return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
-export function useTheme() {
-    return useContext(ThemeContext);
-}
+export const useTheme = () => useContext(ThemeContext)

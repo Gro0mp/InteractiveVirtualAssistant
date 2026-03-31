@@ -2,114 +2,106 @@ import React, { useMemo, useRef, useState } from 'react'
 import { Paperclip, Mic, Send } from 'lucide-react'
 
 export function AssistantChatBar({
-                                     onSend,
-                                     placeholder = 'What do you want to know?',
-                                     disabled = false,
-                                     onAttach,
-                                     onMic,
-                                 }: {
-    onSend: (message: string) => void
-    placeholder?: string
-    disabled?: boolean
-    onAttach?: () => void
-    onMic?: () => void
+                              onSend,
+                              disabled = false,
+                              onAttach,
+                              onMic,
+                              placeholder = 'Ask IVA anything…',
+                          }: {
+    onSend: (message: string) => void;
+    disabled?: boolean;
+    onAttach?: () => void;
+    onMic?: () => void;
+    placeholder?: string;
 }) {
-    const [input, setInput] = useState('')
-    const inputRef = useRef<HTMLInputElement>(null)
+    const [input, setInput] = useState('');
+    const canSend = !disabled && input.trim().length > 0;
 
-    const canSend = useMemo(() => !disabled && input.trim().length > 0, [disabled, input])
-
-    // Fixed: was React.SubmitEvent which doesn't exist in React's type system
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-        if (disabled) return
-
-        const text = input.trim()
-        if (!text) return
-        onSend(text)
-        setInput('')
-    }
+        e.preventDefault();
+        const text = input.trim();
+        if (!text || disabled) return;
+        onSend(text);
+        setInput('');
+    };
 
     return (
-        <form onSubmit={handleSubmit} className="w-full px-4 py-1">
-            <div className="mx-auto flex w-full max-w-4xl items-center gap-3">
-                {/* Liquid-glass pill */}
-                <div
+        <form onSubmit={handleSubmit} className="w-full">
+            <div className="mx-auto flex w-full max-w-2xl items-stretch gap-0">
+                {/* Attach */}
+                <button
+                    type="button"
+                    onClick={onAttach}
+                    disabled={disabled}
+                    aria-label="Attach file"
                     className={[
-                        'relative flex w-full items-center gap-2 rounded-full px-3 py-2',
-                        'overflow-hidden isolate',
-                        'bg-white/40 backdrop-blur-2xl',
-                        'border border-white/60',
-                        'shadow-[0_4px_32px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.7)]',
-                        'ring-1 ring-black/[0.04]',
-                        'transition focus-within:ring-2 focus-within:ring-violet-300/60',
-                        disabled ? 'opacity-60' : '',
+                        'flex items-center justify-center w-12 shrink-0',
+                        'border border-r-0 border-neutral-300/80 dark:border-neutral-700/80',
+                        'bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md',
+                        'text-neutral-400 dark:text-neutral-500',
+                        'hover:text-neutral-700 dark:hover:text-neutral-300',
+                        'transition-colors duration-150',
+                        'disabled:opacity-40 disabled:pointer-events-none',
                     ].join(' ')}
-                    onPointerDown={(e) => {
-                        if (disabled) return
-                        const t = e.target as HTMLElement
-                        if (t.closest('button, a, input, textarea, select, [role="button"]')) return
-                        e.preventDefault()
-                        inputRef.current?.focus()
-                    }}
                 >
-                    {/* Specular highlights */}
-                    <div className="pointer-events-none absolute inset-0 rounded-full iva-glass-sheen-a" />
-                    <div className="pointer-events-none absolute inset-0 rounded-full iva-glass-sheen-b" />
+                    <Paperclip className="w-4 h-4" />
+                </button>
 
-                    <button
-                        type="button"
-                        onClick={onAttach}
-                        aria-label="Attach"
-                        disabled={disabled}
-                        className="relative z-10 grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-white/50 hover:text-slate-700 disabled:opacity-40"
-                    >
-                        <Paperclip className="h-5 w-5" />
-                    </button>
+                {/* Input */}
+                <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder={placeholder}
+                    disabled={disabled}
+                    className={[
+                        'flex-1 min-h-[52px] px-4',
+                        'bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md',
+                        'border border-neutral-300/80 dark:border-neutral-700/80',
+                        'text-[13px] font-mono text-neutral-900 dark:text-white',
+                        'placeholder:text-neutral-400 dark:placeholder:text-neutral-600',
+                        'outline-none focus:border-blue-400 dark:focus:border-blue-500',
+                        'transition-colors duration-150',
+                        disabled ? 'opacity-60 cursor-not-allowed' : '',
+                    ].join(' ')}
+                />
 
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder={placeholder}
-                        disabled={disabled}
-                        className="relative z-10 min-w-0 flex-1 bg-transparent px-1 py-1 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none"
-                    />
+                {/* Mic */}
+                <button
+                    type="button"
+                    onClick={onMic}
+                    disabled={disabled}
+                    aria-label="Voice input"
+                    className={[
+                        'flex items-center justify-center w-12 shrink-0',
+                        'border border-l-0 border-neutral-300/80 dark:border-neutral-700/80',
+                        'bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md',
+                        'text-neutral-400 dark:text-neutral-500',
+                        'hover:text-neutral-700 dark:hover:text-neutral-300',
+                        'transition-colors duration-150',
+                        'disabled:opacity-40 disabled:pointer-events-none',
+                    ].join(' ')}
+                >
+                    <Mic className="w-4 h-4" />
+                </button>
 
-                    <button
-                        type="button"
-                        onClick={onMic}
-                        aria-label="Voice input"
-                        disabled={disabled}
-                        className="relative z-10 grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-white/50 hover:text-slate-700 disabled:opacity-40"
-                    >
-                        <Mic className="h-5 w-5" />
-                    </button>
-                </div>
-
-                {/* Liquid-glass send button */}
+                {/* Send */}
                 <button
                     type="submit"
                     disabled={!canSend}
-                    aria-label="Send"
+                    aria-label="Send message"
                     className={[
-                        'relative grid h-11 w-11 shrink-0 place-items-center rounded-full overflow-hidden',
-                        'bg-white/40 backdrop-blur-2xl',
-                        'border border-white/60',
-                        'shadow-[0_4px_24px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.7)]',
-                        'ring-1 ring-black/[0.04]',
-                        'transition',
-                        'hover:bg-white/55 hover:shadow-[0_6px_32px_rgba(15,23,42,0.12)]',
-                        'focus:outline-none focus:ring-2 focus:ring-violet-300/60',
-                        'disabled:opacity-35 disabled:pointer-events-none',
-                        'cursor-pointer disabled:cursor-not-allowed',
+                        'flex items-center justify-center w-14 shrink-0 ml-px',
+                        'border border-neutral-300/80 dark:border-neutral-700/80',
+                        'bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500',
+                        'text-white transition-colors duration-150',
+                        'disabled:opacity-35 disabled:bg-neutral-200 dark:disabled:bg-neutral-800',
+                        'disabled:text-neutral-400 disabled:pointer-events-none',
                     ].join(' ')}
                 >
-                    <span className="pointer-events-none absolute inset-0 rounded-full iva-glass-sheen-a" />
-                    <Send className="relative z-10 h-5 w-5 text-slate-700" />
+                    <Send className="w-4 h-4" />
                 </button>
             </div>
         </form>
-    )
+    );
 }

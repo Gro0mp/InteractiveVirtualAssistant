@@ -3,7 +3,7 @@ import {motion} from 'framer-motion';
 import {ArrowRight, CheckCircle2, Mic, Briefcase, FileText} from 'lucide-react';
 import {Button} from '../ui/Button.tsx';
 import {GridBackground} from '../ui/GridBackground.tsx';
-import {Link} from 'react-router-dom';
+import Link from 'next/link';
 import {useAuth} from '../../context/AuthContext.tsx';
 import {HeroSectionAssistant} from './HeroSectionAssistant';
 
@@ -95,14 +95,14 @@ export function HeroSection() {
                             className="flex flex-wrap gap-3 mb-7"
                         >
                             {isAuthenticated ? (
-                                <Link to="/dashboard">
-                                    <Button size="lg" variant="secondary" rightIcon={<ArrowRight className="w-4 h-4"/>}>
-                                        Dashboard
+                                <Link href="/assistant">
+                                    <Button size="lg" variant="secondary" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                                        Open assistant
                                     </Button>
                                 </Link>
                             ) : (
-                                <Link to="/signup">
-                                    <Button size="lg" variant="secondary" rightIcon={<ArrowRight className="w-4 h-4"/>}>
+                                <Link href="/signup">
+                                    <Button size="lg" variant="secondary" rightIcon={<ArrowRight className="w-4 h-4" />}>
                                         Get started free
                                     </Button>
                                 </Link>

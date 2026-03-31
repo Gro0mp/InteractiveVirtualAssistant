@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+'use client'
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Menu, X, LogOut, User, Sun, Moon } from 'lucide-react';
 import { Button } from '../ui/Button.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,6 +31,24 @@ export function Navbar() {
         setIsMobileMenuOpen(false);
     };
 
+    const handleAnchorNav = (href: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+        // Avoid adding an extra history entry for hash navigation.
+        // This prevents the "back" button from landing on /#pricing before going back to /login.
+        if (!href.startsWith('#')) return;
+        e.preventDefault();
+
+        try {
+            window.history.replaceState(null, '', href);
+        } catch {
+            // no-op
+        }
+
+        const el = document.querySelector(href);
+        if (el instanceof HTMLElement) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
         <nav
             role="navigation"
@@ -43,7 +63,7 @@ export function Navbar() {
                 <div className="flex justify-between items-center h-14 md:h-16">
 
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2.5 group" aria-label="IVA home">
+                    <Link href="/" className="flex items-center gap-2.5 group" aria-label="IVA home">
                         <div className="w-7 h-7 border border-neutral-300 dark:border-neutral-700 group-hover:border-blue-500 dark:group-hover:border-blue-500 transition-colors duration-150 flex items-center justify-center">
                             <img src="/logo.png" alt="" className="scale-[1.8]" aria-hidden />
                         </div>
@@ -56,6 +76,7 @@ export function Navbar() {
                             <a
                                 key={link.href}
                                 href={link.href}
+                                onClick={handleAnchorNav(link.href)}
                                 className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors duration-150 tracking-widest uppercase"
                             >
                                 {link.label}
@@ -108,10 +129,10 @@ export function Navbar() {
                             </>
                         ) : (
                             <>
-                                <Link to="/login">
+                                <Link href="/login">
                                     <Button variant="ghost" size="sm">Log in</Button>
                                 </Link>
-                                <Link to="/signup">
+                                <Link href="/signup">
                                     <Button variant="secondary" size="sm">Get started</Button>
                                 </Link>
                             </>
@@ -167,7 +188,10 @@ export function Navbar() {
                                     key={link.href}
                                     href={link.href}
                                     className="block py-2.5 text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-white tracking-widest uppercase transition-colors"
-                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    onClick={(e) => {
+                                        handleAnchorNav(link.href)(e);
+                                        setIsMobileMenuOpen(false);
+                                    }}
                                 >
                                     {link.label}
                                 </a>
@@ -185,10 +209,10 @@ export function Navbar() {
                                     </>
                                 ) : (
                                     <>
-                                        <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                                        <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
                                             <Button variant="outline" className="w-full justify-center">Log in</Button>
                                         </Link>
-                                        <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                                        <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
                                             <Button variant="secondary" className="w-full justify-center">Get started</Button>
                                         </Link>
                                     </>
