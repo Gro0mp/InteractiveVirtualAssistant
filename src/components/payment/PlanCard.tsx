@@ -8,6 +8,9 @@ export type PlanCardProps = {
   description: string
   features: { label: string; included: boolean }[]
   ctaLabel: string
+  /** Optional link for the CTA (e.g., a Stripe hosted checkout URL). */
+  ctaHref?: string
+  /** Called when CTA is clicked and no ctaHref is provided. */
   onClick: () => void
   loading?: boolean
   highlighted?: boolean
@@ -20,6 +23,7 @@ export function PlanCard({
   description,
   features,
   ctaLabel,
+  ctaHref,
   onClick,
   loading,
   highlighted,
@@ -100,20 +104,39 @@ export function PlanCard({
         ))}
       </ul>
 
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={Boolean(loading)}
-        className={[
-          'w-full inline-flex items-center justify-center px-4 py-3 text-xs font-semibold font-mono uppercase tracking-widest transition-colors duration-150',
-          highlighted
-            ? 'bg-white text-blue-700 hover:bg-blue-50'
-            : 'border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white hover:border-neutral-300 dark:hover:border-neutral-700',
-          loading ? 'opacity-70 cursor-not-allowed' : '',
-        ].join(' ')}
-      >
-        {loading ? 'Redirecting…' : ctaLabel}
-      </button>
+      {ctaHref ? (
+        <a
+          href={ctaHref}
+          aria-disabled={Boolean(loading)}
+          onClick={(e) => {
+            if (loading) e.preventDefault()
+          }}
+          className={[
+            'w-full inline-flex items-center justify-center px-4 py-3 text-xs font-semibold font-mono uppercase tracking-widest transition-colors duration-150',
+            highlighted
+              ? 'bg-white text-blue-700 hover:bg-blue-50'
+              : 'border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white hover:border-neutral-300 dark:hover:border-neutral-700',
+            loading ? 'opacity-70 cursor-not-allowed pointer-events-none' : '',
+          ].join(' ')}
+        >
+          {loading ? 'Redirecting…' : ctaLabel}
+        </a>
+      ) : (
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={Boolean(loading)}
+          className={[
+            'w-full inline-flex items-center justify-center px-4 py-3 text-xs font-semibold font-mono uppercase tracking-widest transition-colors duration-150',
+            highlighted
+              ? 'bg-white text-blue-700 hover:bg-blue-50'
+              : 'border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white hover:border-neutral-300 dark:hover:border-neutral-700',
+            loading ? 'opacity-70 cursor-not-allowed' : '',
+          ].join(' ')}
+        >
+          {loading ? 'Redirecting…' : ctaLabel}
+        </button>
+      )}
 
       <p className={['mt-2.5 text-center text-[10px] font-mono', highlighted ? 'text-blue-300' : 'text-neutral-400 dark:text-neutral-700'].join(' ')}>
         Cancel anytime

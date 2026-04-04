@@ -4,6 +4,7 @@ import { ProductDisplay, type CheckoutPlan } from '../components/payment/Product
 import { SuccessDisplay } from '../components/payment/SuccessDisplay'
 import { Message } from '../components/payment/Message'
 import { PaymentShell } from '../components/payment/PaymentShell'
+import {useAuth} from "../context/AuthContext.tsx";
 
 export function StripePaymentPage() {
   const router = useRouter()
@@ -13,6 +14,7 @@ export function StripePaymentPage() {
   const [success, setSuccess] = useState(false)
   const [sessionId, setSessionId] = useState<string>('')
   const [loadingPlan, setLoadingPlan] = useState<CheckoutPlan | null>(null)
+  const { user, isAuthenticated, isLoading } = useAuth()
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search)
@@ -77,7 +79,6 @@ export function StripePaymentPage() {
     return (
       <ProductDisplay
         onCheckout={checkout}
-        onFree={() => router.replace('/signup')}
         loadingPlan={loadingPlan}
       />
     )

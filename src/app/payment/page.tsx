@@ -1,11 +1,12 @@
 'use client'
 
 import {StripePaymentPage} from "../../custompages/StripePaymentPage.tsx";
+import ProtectedRoute from "../../components/ProtectedRoutes.tsx";
 
 export default function Page() {
     return (
-        <div className="min-h-[60vh] flex items-center justify-center">
+        <ProtectedRoute>
             <StripePaymentPage/>
-        </div>
+        </ProtectedRoute>
     )
 }

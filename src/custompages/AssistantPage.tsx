@@ -23,10 +23,22 @@ import {AssistantChatBar} from '../components/assistant/AssistantChatBar';
 import {StatusBadge} from "../components/assistant/StatusBadge.tsx";
 import {ChatHistoryPanel} from "../components/assistant/ChatHistoryPanel.tsx";
 import {FeatureTile} from "../components/assistant/FeatureTile.tsx";
+import { AssistantStyleSelect, type AssistantStyle } from '../components/assistant/AssistantStyleSelect';
+
+const STYLE_STORAGE_KEY = 'iva_assistant_style';
+
+function isAssistantStyle(v: unknown): v is AssistantStyle {
+    return v === 'friendly' || v === 'professional' || v === 'humorous' || v === 'ltg';
+}
 
 export function AssistantPage() {
     const [animation, setAnimation] = useState<string | null>(null);
     const [messages, setMessages] = useState<ChatHistoryListResponse[]>([]);
+    const [style, setStyle] = useState<AssistantStyle>(() => {
+        if (typeof window === 'undefined') return 'friendly';
+        const stored = window.localStorage.getItem(STYLE_STORAGE_KEY);
+        return isAssistantStyle(stored) ? stored : 'friendly';
+    });
     const [audio, setAudio] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [wsStatus, setWsStatus] = useState<'connected' | 'disconnected' | 'error'>('disconnected');
@@ -53,11 +65,16 @@ export function AssistantPage() {
         wsClient.connect(user.id);
 
         const unsubMessage = wsClient.onMessage((response) => {
-            setMessages(prev => [...prev, { role: 'ASSISTANT', content: response.responseMessage, createdAt: new Date().toISOString() }]);
-            if (response.audioUrl) setAudio(response.audioUrl);
-            setAnimation(null);
-            setIsLoading(false);
-        });
+            console.log('WS message received:', response) // add this
+            setMessages(prev => [...prev, {
+                role: 'ASSISTANT',
+                content: response.responseMessage,
+                createdAt: new Date().toISOString()
+            }])
+            if (response.audioUrl) setAudio(response.audioUrl)
+            setAnimation(null)
+            setIsLoading(false)
+        })
 
         const unsubError = wsClient.onError((code) => {
             console.error('WS error:', code);
@@ -71,7 +88,7 @@ export function AssistantPage() {
             if (status !== 'connected') { setAnimation(null); setIsLoading(false); }
         });
 
-        // ✅ Only remove THIS component's listeners — don't kill the shared WS connection
+        // Only remove THIS component's listeners — don't kill the shared WS connection
         return () => { unsubMessage(); unsubError(); unsubStatus(); };
     }, [user?.id]);
 
@@ -80,7 +97,8 @@ export function AssistantPage() {
         setMessages(prev => [...prev, { role: 'USER', content: text, createdAt: new Date().toISOString() }]);
         setAnimation('Thinking');
         setIsLoading(true);
-        wsClient.sendMessage({ userMessage: text, userId: user.id });
+        // Include style so backend can tailor the response tone.
+        wsClient.sendMessage({ userMessage: text, userId: user.id, style });
     };
 
     const leftTiles: { icon: LucideIcon; label: string; href: string }[] = [
@@ -94,6 +112,15 @@ export function AssistantPage() {
         { icon: Speech, label: 'Interview', href: '/interview'   },
         { icon: Search, label: 'Jobs',      href: '/search-jobs' },
     ];
+
+    // Get style from local storage if available.
+    useEffect(() => {
+        try {
+            window.localStorage.setItem(STYLE_STORAGE_KEY, style);
+        } catch {
+            // ignore storage errors (private mode, disabled storage, etc.)
+        }
+    }, [style]);
 
     return (
         <DashboardLayout>
@@ -163,8 +190,8 @@ export function AssistantPage() {
 
                     {/* Chat bar area */}
                     <div className="w-full shrink-0 px-6 pb-5 pt-3 pointer-events-auto">
-                        {/* Status label */}
-                        <div className="mx-auto max-w-2xl mb-2.5 flex items-center gap-2">
+                        {/* Status label + style selector */}
+                        <div className="mx-auto max-w-2xl mb-2.5 flex items-center justify-between gap-3">
                             <span className={[
                                 'inline-flex items-center gap-1.5 px-2.5 py-1',
                                 'border border-neutral-300/70 dark:border-neutral-700/70',
@@ -174,6 +201,12 @@ export function AssistantPage() {
                                 <span className={`w-1.5 h-1.5 rounded-full ${wsStatus === 'connected' ? 'bg-blue-500 animate-pulse' : 'bg-neutral-300 dark:bg-neutral-700'}`} />
                                 {wsStatus === 'connected' ? 'IVA · Ready' : 'IVA · Connecting'}
                             </span>
+
+                            <AssistantStyleSelect
+                              value={style}
+                              onChangeAction={setStyle}
+                              disabled={isLoading}
+                            />
                         </div>
 
                         <AssistantChatBar

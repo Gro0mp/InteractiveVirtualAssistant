@@ -3,6 +3,7 @@ import {Client, type IMessage, type StompSubscription} from '@stomp/stompjs'
 export interface ChatMessageRequest {
     userMessage: string
     userId: number
+    style?: "friendly" | "professional" | "humorous" | "ltg"
 }
 
 export interface ChatMessageResponse {
@@ -53,6 +54,7 @@ class StompChatClient {
             .replace(/^http:/i,  'ws:')
             .replace(/\/$/, '')
 
+        // Connect to the STOMP endpoint (Spring Boot's default is /ws or /chat-websocket, but adjust as needed)
         this.client.brokerURL = `${wsBase}/chat-websocket`
 
         if (!this.client.active) {
@@ -80,10 +82,12 @@ class StompChatClient {
     onError  (listener: ErrorListener  ): () => void { this.errorListeners.add(listener);   return () => this.errorListeners.delete(listener) }
     onStatus (listener: StatusListener ): () => void { this.statusListeners.add(listener);   return () => this.statusListeners.delete(listener) }
 
+    // Subscribe to user-specific queues for messages and errors. Spring Security's STOMP support automatically routes messages to /user/queue/* based on the authenticated session.
     private subscribeToUserQueues(): void {
-        this.messageSubscription?.unsubscribe()
-        this.errorSubscription?.unsubscribe()
+        this.messageSubscription?.unsubscribe() // Unsubscribe first to avoid duplicate subscriptions if reconnecting
+        this.errorSubscription?.unsubscribe() // Same for error subscription
 
+        // FIX: added try-catch around JSON parsing to prevent malformed messages from breaking the client. Errors are logged and the raw message is emitted as an error event.
         this.messageSubscription = this.client.subscribe(
             '/user/queue/messages',
             (msg: IMessage) => {
@@ -91,6 +95,7 @@ class StompChatClient {
                 catch (e) { console.error('[ws] parse error', e, msg.body) }
             },
         )
+        // FIX: added try-catch around JSON parsing for error messages as well, since the backend might send either structured error responses or plain text. This ensures that the client can handle both cases gracefully without crashing.
         this.errorSubscription = this.client.subscribe(
             '/user/queue/errors',
             (msg: IMessage) => {

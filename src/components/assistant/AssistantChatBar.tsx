@@ -17,7 +17,7 @@ export function AssistantChatBar({
     const [input, setInput] = useState('');
     const canSend = !disabled && input.trim().length > 0;
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         const text = input.trim();
         if (!text || disabled) return;

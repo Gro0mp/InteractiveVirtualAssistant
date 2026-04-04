@@ -28,7 +28,7 @@ const plans: PricingPlan[] = [
             { label: 'Priority AI responses', included: false },
             { label: 'Advanced analytics', included: false },
         ],
-        ctaLabel: 'Start free',
+        ctaLabel: 'Get started',
         ctaHref: '/signup',
     },
     {
@@ -44,7 +44,7 @@ const plans: PricingPlan[] = [
             { label: 'Priority AI responses', included: true },
             { label: 'Advanced analytics', included: false },
         ],
-        ctaLabel: 'Start Basic',
+        ctaLabel: 'Get started',
         ctaHref: '/signup',
         highlighted: true,
     },
@@ -61,7 +61,7 @@ const plans: PricingPlan[] = [
             { label: 'Early feature access', included: true },
             { label: 'API access (coming soon)', included: true },
         ],
-        ctaLabel: 'Start Pro',
+        ctaLabel: 'Get started',
         ctaHref: '/signup',
     },
 ];

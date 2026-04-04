@@ -3,26 +3,46 @@ logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+out/
+dist/
+dist-ssr/
+
+# TypeScript / tooling caches
+*.tsbuildinfo
+.eslintcache
+.turbo/
+
+# Test / coverage
+coverage/
+
+# Misc
 *.local
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Secrets
+# Secrets / local config
 *.env
+.env.*
 *.conf
+
+# Optional: lockfiles for alternate package managers (keep package-lock.json if you use npm)
+# pnpm-lock.yaml
+# yarn.lock

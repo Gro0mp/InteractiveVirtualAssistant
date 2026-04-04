@@ -22,7 +22,7 @@ export interface User {
     id: number
     username: string
     email: string
-    plan?: 'free' | 'basic' | 'premium' | 'FREE' | 'BASIC' | 'PREMIUM'
+    plan?: 'FREE' | 'BASIC' | 'PROFESSIONAL'
     avatar_url?: string
     last_login?: string
 }
@@ -82,6 +82,21 @@ async function handleResponse<T>(res: Response): Promise<T> {
     return res.json() as Promise<T>
 }
 
+async function fetchWithTimeout(
+    input: RequestInfo | URL,
+    init: RequestInit & { timeoutMs?: number } = {},
+): Promise<Response> {
+    const { timeoutMs = 8000, ...rest } = init
+    const controller = new AbortController()
+    const t = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+        return await fetch(input, { ...rest, signal: controller.signal })
+    } finally {
+        clearTimeout(t)
+    }
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 class ApiService {
@@ -112,19 +127,26 @@ class ApiService {
     }
 
     async getCurrentUser(): Promise<User> {
-        const res = await fetch(`${API_BASE}/users/me`, { credentials: 'include' })
-        if (!res.ok) throw new Error('Not authenticated')
-        return res.json()
+        try {
+            const res = await fetchWithTimeout(`${API_BASE}/users/me`, {
+                credentials: 'include',
+                timeoutMs: 8000,
+            })
+            if (!res.ok) throw new Error('Not authenticated')
+            return res.json()
+        } catch (err: any) {
+            if (err?.name === 'AbortError') throw new Error('AUTH_TIMEOUT')
+            throw err
+        }
     }
 
     // FIX: logout is at /logout (Spring Security default), not /api/v1/logout
     async logout(): Promise<void> {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/logout`, {
+        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/logout`, {
             method: 'POST',
             headers: csrfHeaders(),
             credentials: 'include',
         })
-        if (!res.ok && !res.redirected) throw new Error('Logout failed')
     }
 
     async getMessageHistory(req: ChatHistoryListRequest): Promise<ChatHistoryListResponse[]> {
