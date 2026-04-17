@@ -45,24 +45,6 @@ export function DocumentManagementPage() {
                         <DocumentUploadArea />
                     </div>
                 </div>
-
-                {/* Right Sidebar */}
-                {/*<motion.div*/}
-                {/*    initial={{*/}
-                {/*        opacity: 0,*/}
-                {/*        x: 20,*/}
-                {/*    }}*/}
-                {/*    animate={{*/}
-                {/*        opacity: 1,*/}
-                {/*        x: 0,*/}
-                {/*    }}*/}
-                {/*    transition={{*/}
-                {/*        delay: 0.2,*/}
-                {/*    }}*/}
-                {/*    className="hidden lg:block h-full border-l border-slate-200"*/}
-                {/*>*/}
-                {/*    <EditorSidebar />*/}
-                {/*</motion.div>*/}
             </div>
         </DashboardLayout>
     )

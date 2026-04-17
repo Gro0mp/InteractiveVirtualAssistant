@@ -1,45 +1,37 @@
-import React, { Suspense, useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { DashboardLayout } from '../components/DashboardLayout'
-import { InterviewScene } from '../components/interview/InterviewScene'
-import { InterviewChatPanel } from '../components/interview/InterviewChatPanel'
-import { InterviewSetupPanel } from '../components/interview/InterviewSetupPanel'
-import { InterviewSelectionPanel } from '../components/interview/InterviewSelectionPanel'
-import type { InterviewSetupValue } from '../components/interview/InterviewSetupPanel'
-import type { InterviewMessageHistoryListResponse, InterviewSessionResponse } from '../services/api'
-import { api } from '../services/api'
-import { useAuth } from '../context/AuthContext'
-import {TTSControls} from "../components/assistant/TTSControls.tsx";
+'use client'
 
-type View = 'selection' | 'setup' | 'chat'
+import React, {Suspense, useEffect, useState} from 'react'
+import {useParams, useRouter} from 'next/navigation'
+import {DashboardLayout} from '../components/DashboardLayout'
+import {InterviewScene} from '../components/interview/InterviewScene'
+import {InterviewSetupPanel} from '../components/interview/InterviewSetupPanel'
+import {InterviewSelectionPanel} from '../components/interview/InterviewSelectionPanel'
+import {ResumeUploader} from '../components/interview/ResumeUploader'
+import type {InterviewSetupValue} from '../components/interview/InterviewSetupPanel'
+import type {InterviewSessionResponse} from '../services/api'
+import {api} from '../services/api'
+import {useAuth} from '../context/AuthContext'
+
+type View = 'selection' | 'setup'
 
 export function InterviewPage() {
-    const router = useRouter()
     const params = useParams<{ sessionId?: string }>()
-    const { user } = useAuth()
-    const [audio, setAudio] = useState<string | null>(null);
+    const router = useRouter()
+    const {user} = useAuth()
 
-    // ── view state ────────────────────────────────────────────────────────────
-    const [view, setView] = useState<View>(() => {
-        const sid = params?.sessionId
-        if (!sid || sid === 'new') return 'setup'
-        return 'selection'
-    })
+    const [view, setView] = useState<View>(() =>
+        params?.sessionId === 'new' ? 'setup' : 'selection'
+    )
 
-    // ── session list ──────────────────────────────────────────────────────────
+    // ── Session list ──────────────────────────────────────────────────────────
     const [sessions, setSessions] = useState<InterviewSessionResponse[]>([])
     const [isLoadingSessions, setIsLoadingSessions] = useState(false)
-
-    // ── interview state ───────────────────────────────────────────────────────
-    const [isCompleted, setIsCompleted] = useState(false)
-    const [questionProgress, setQuestionProgress] = useState<{ answered: number; total: number } | null>(null)
 
     const loadSessions = async () => {
         if (!user?.id) return
         setIsLoadingSessions(true)
         try {
-            const data = await api.getInterviewSessions(String(user.id))
-            setSessions(data)
+            setSessions(await api.getInterviewSessions())
         } catch (e) {
             console.error('Failed to load sessions:', e)
         } finally {
@@ -51,78 +43,40 @@ export function InterviewPage() {
         if (view === 'selection') void loadSessions()
     }, [view, user?.id])
 
-    // ── setup state ───────────────────────────────────────────────────────────
+    // ── Setup state ───────────────────────────────────────────────────────────
     const [setup, setSetup] = useState<InterviewSetupValue | null>(null)
-
-    // ── chat state ────────────────────────────────────────────────────────────
-    const [activeSessionId, setActiveSessionId] = useState<number | null>(null)
-
-    /**
-     * FIX: was typed as InterviewMessageHistoryListResponse[] but used as ChatHistoryMessage[]
-     * throughout (role: 'user'/'assistant', createdAt: number). Using ChatHistoryMessage[]
-     * consistently so components and sort logic all agree on the shape.
-     */
-    const [messages, setMessages] = useState<InterviewMessageHistoryListResponse[]>([])
     const [isSending, setIsSending] = useState(false)
     const [animation, setAnimation] = useState<string | null>(null)
 
-    // ── route → view sync ─────────────────────────────────────────────────────
-    useEffect(() => {
-        const sid = params?.sessionId
-        if (!sid) {
-            setView('selection')
-            return
-        }
-        if (sid === 'new') {
-            setIsSending(false)
-            setAnimation(null)
-            setMessages([])
-            setActiveSessionId(null)
-            setView('setup')
-            return
-        }
-        const parsed = Number(sid)
-        if (!Number.isFinite(parsed)) {
-            router.replace('/interview')
-            return
-        }
-        setActiveSessionId(parsed)
-        setView('chat')
-    }, [params, router])
+    // Resume selection state — lifted here so InterviewPage can pass resume text
+    // into createInterviewSession alongside the job description
+    const [resumeText, setResumeText] = useState<string | null>(null)
+    const [resumeFileName, setResumeFileName] = useState<string | undefined>(undefined)
 
-    // ── handlers ──────────────────────────────────────────────────────────────
+    const [resumeS3Key, setResumeS3Key]    = useState<string | null>(null)
+
+    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleCreateNew = () => {
         setSetup(null)
-        router.replace('/interview/new')
+        setResumeText(null)
+        setResumeFileName(undefined)
+        setResumeS3Key(null)
+        setView('setup')
+        window.history.replaceState(null, '', '/interview/new')
     }
 
     const handleOpenSession = (sessionId: number) => {
-        setActiveSessionId(sessionId)
-        setMessages([])
-        router.replace(`/interview/${sessionId}`)
+        router.push(`/interview/${sessionId}`)
     }
 
-    // ── load history when entering chat view ──────────────────────────────────
-    useEffect(() => {
-        if (!activeSessionId || view !== 'chat') return
-        const loadHistory = async () => {
-            try {
-                const history = await api.getInterviewMessages(activeSessionId)
+    const handleBack = () => {
+        setView('selection')
+        window.history.replaceState(null, '', '/interview')
+    }
 
-                const mapped: InterviewMessageHistoryListResponse[] = history.map((m) => ({
-                    id: m.id,
-                    sessionId: m.sessionId,
-                    role: m.role === 'INTERVIEWER' ? 'INTERVIEWER' : 'CANDIDATE',
-                    content: m.content,
-                    createdAt: m.createdAt,
-                }))
-                setMessages(mapped)
-            } catch (e) {
-                console.error('Failed to load message history:', e)
-            }
-        }
-        void loadHistory()
-    }, [activeSessionId, view])
+    const handleOpenFeedback = (sessionId: number) => {
+        router.push(`/interview/${sessionId}/feedback`)
+    }
 
     const handleDeleteSession = async (id: number) => {
         try {
@@ -135,22 +89,17 @@ export function InterviewPage() {
 
     const handleStart = async (nextSetup: InterviewSetupValue) => {
         if (!user?.id || isSending) return
-
         setIsSending(true)
         setAnimation('Thinking')
-
         try {
-            const session = await api.createInterviewSession(user.id, nextSetup.jobDescriptionText)
-            setActiveSessionId(session.id)
-            setMessages([])
-            router.replace(`/interview/${session.id}`)
-
-            setIsSending(false)
-            setAnimation(null)
-            setIsCompleted(false)
-            setQuestionProgress(null)
-
-            await sendMessage(session.id, 'Hello, I am ready to begin the interview.')
+            // The job description is stored as-is. The resume is stored separately
+            // via resumeS3Key so the backend can scope RAG retrieval to exactly
+            // that document's chunks during the interview.
+            const session = await api.createInterviewSession(
+                nextSetup.jobDescriptionText,
+                resumeS3Key ?? undefined
+            )
+            router.push(`/interview/${session.id}`)
         } catch (err) {
             if (err instanceof Error && err.message === 'LIMIT_EXCEEDED') {
                 alert('You have reached your interview limit. Upgrade your plan to create more.')
@@ -163,122 +112,101 @@ export function InterviewPage() {
         }
     }
 
-    const sendMessage = async (_sessionId: number, text: string) => {
-        if (!user?.id) return
-
-        const userMsg: InterviewMessageHistoryListResponse = {
-            id: user.id,
-            sessionId: _sessionId,
-            role: 'CANDIDATE',
-            content: text,
-            createdAt: new Date().toISOString()
+    // ── Left panel ────────────────────────────────────────────────────────────
+    // Selection view → 3D assistant as before
+    // Setup view     → ResumeUploader so the user can attach their CV
+    const leftPanel = () => {
+        if (view === 'setup') {
+            return (
+                <ResumeUploader
+                    selectedFileName={resumeFileName}
+                    onResumeSelected={(text, fileName, s3Key) => {
+                        setResumeText(text)
+                        setResumeFileName(fileName)
+                        setResumeS3Key(s3Key ?? null)
+                    }}
+                    onResumeCleared={() => {
+                        setResumeText(null)
+                        setResumeFileName(undefined)
+                        setResumeS3Key(null)
+                    }}
+                />
+            )
         }
-        setMessages((prev) => [...prev, userMsg])
-        setIsSending(true)
-        setAnimation('Thinking')
-
-        try {
-            const saved = await api.sendInterviewMessage(_sessionId, user.id, text)
-
-            const interviewerMsg: InterviewMessageHistoryListResponse = {
-                id: user.id,
-                sessionId: _sessionId,
-                role: 'INTERVIEWER',
-                content: saved.responseMessage,
-                createdAt: new Date().toISOString()
-            }
-            setMessages((prev) => [...prev, interviewerMsg])
-
-            if (saved.completed) {
-                setIsCompleted(true)
-            }
-            if (saved.audioUrl) {
-                setAudio(saved.audioUrl)
-            }
-            setQuestionProgress({
-                answered: saved.questionsAnswered,
-                total: saved.totalQuestions,
-            })
-        } catch (err) {
-            console.error('Failed to send interview message:', err)
-        } finally {
-            setAnimation(null)
-            setIsSending(false)
-        }
+        return (
+            <Suspense fallback={null}>
+                <InterviewScene animationName={animation ?? undefined}/>
+            </Suspense>
+        )
     }
 
-    const handleSend = async (text: string) => {
-        if (!activeSessionId || isSending) return
-        await sendMessage(activeSessionId, text)
-    }
-
-    const handleBackToSelection = () => {
-        router.replace('/interview')
-    }
-
-    // ── right panel ───────────────────────────────────────────────────────────
+    // ── Right panel ───────────────────────────────────────────────────────────
     const rightPanel = () => {
-        switch (view) {
-            case 'selection':
-                return (
-                    <InterviewSelectionPanel
-                        sessions={sessions}
-                        isLoading={isLoadingSessions}
-                        onCreateNew={handleCreateNew}
-                        onOpen={handleOpenSession}
-                        onDelete={handleDeleteSession}
-                    />
-                )
-            case 'setup':
-                return (
-                    <InterviewSetupPanel
-                        value={setup}
-                        onChange={setSetup}
-                        onStart={handleStart}
-                        onBack={handleBackToSelection}
-                        isStarting={isSending}
-                    />
-                )
-            case 'chat':
-                return (
-                    <InterviewChatPanel
-                        title="Mock Interview"
-                        subtitle={
-                            questionProgress
-                                ? `Question ${questionProgress.answered} of ${questionProgress.total}`
-                                : 'Ask questions, practice answers, and get feedback.'
-                        }
-                        messages={messages}
-                        onSend={handleSend}
-                        disabled={isSending || isCompleted}
-                        isCompleted={isCompleted}
-                        onBack={() => router.replace('/interview')}
-                    />
-                )
+        if (view === 'setup') {
+            return (
+                <InterviewSetupPanel
+                    value={setup}
+                    onChange={setSetup}
+                    onStart={handleStart}
+                    onBack={handleBack}
+                    isStarting={isSending}
+                />
+            )
         }
+        return (
+            <InterviewSelectionPanel
+                sessions={sessions}
+                isLoading={isLoadingSessions}
+                onCreateNew={handleCreateNew}
+                onOpen={handleOpenSession}
+                onDelete={handleDeleteSession}
+                onOpenFeedback={handleOpenFeedback}
+            />
+        )
     }
 
     return (
         <DashboardLayout>
-            <TTSControls
-                audioData={audio}
-                autoPlay={true}
-                onPlayingStateChange={(playing) => {
-                    if (playing) setAnimation('Talking');
-                    else setAnimation(null);
-                }}
-            />
-            <div className="relative -m-4 sm:-m-6 lg:-m-8 h-[calc(100vh-4rem)] font-[Manrope] overflow-hidden">
-                <div className="pointer-events-none absolute inset-0 -z-10">
-                    <div className="absolute inset-0 bg-[radial-gradient(900px_520px_at_20%_0%,rgba(43,109,255,0.10),transparent_60%),radial-gradient(900px_620px_at_80%_10%,rgba(109,224,255,0.12),transparent_55%)]" />
+            <div
+                className="relative -m-4 sm:-m-6 lg:-m-8 h-[calc(100vh-3.5rem)] font-mono overflow-hidden bg-neutral-50 dark:bg-[#0A0A0A]">
+                {/* Grid texture */}
+                <svg
+                    className="absolute inset-0 w-full h-full opacity-[0.035] dark:opacity-[0.025] pointer-events-none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden
+                >
+                    <defs>
+                        <pattern id="interview-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1"/>
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#interview-grid)"
+                          className="text-neutral-900 dark:text-white"/>
+                </svg>
+
+                {/* Blue ambient glow */}
+                <div
+                    className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-96 bg-blue-400/6 dark:bg-blue-600/10 blur-[120px] pointer-events-none"
+                    aria-hidden
+                />
+
+                {/* Section label */}
+                <div className="absolute top-5 left-6 flex items-center gap-2 z-10">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"/>
+                    <span
+                        className="text-[9px] font-semibold text-neutral-400 dark:text-neutral-600 uppercase tracking-widest">
+                        Mock Interview — IVA
+                    </span>
                 </div>
-                <div className="h-full w-full px-4 sm:px-6 lg:px-8 py-6">
+
+                <div className="h-full w-full px-4 sm:px-6 lg:px-8 pt-12 pb-4">
                     <div className="mx-auto max-w-[1400px] h-full grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-4">
+                        {/* Left */}
                         <div className="min-h-0">
-                            <Suspense fallback={null}>
-                                <InterviewScene animationName={animation ?? undefined} />
-                            </Suspense>
+                            {leftPanel()}
                         </div>
+
+                        {/* Right */}
                         <div className="min-h-0">
                             {rightPanel()}
                         </div>

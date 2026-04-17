@@ -1,62 +1,90 @@
 import { useEffect, useRef } from 'react';
 
 type TTSControlsProps = {
-    audioData: string | null;
-    autoPlay?: boolean;
+    // We pass an object so React triggers the effect even if two chunks are identical
+    newAudioChunk: { url: string; id: number } | null;
+    clearTrigger: number; // Increment this to instantly kill audio (e.g., user interrupts)
     onPlayingStateChange?: (playing: boolean) => void;
 };
 
-export function TTSControls({ audioData, autoPlay = true, onPlayingStateChange }: TTSControlsProps) {
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-
-    /**
-     * FIX: dependency array was missing autoPlay and onPlayingStateChange.
-     * Omitting them caused the effect to close over stale values if either prop
-     * changed after the first render (e.g. parent re-renders with a new callback ref).
-     *
-     * onPlayingStateChange is wrapped in a ref so that changing the callback
-     * identity on the parent side doesn't needlessly restart audio playback.
-     */
+export function TTSControls({ newAudioChunk, clearTrigger, onPlayingStateChange }: TTSControlsProps) {
+    const audioRef        = useRef<HTMLAudioElement | null>(null);
+    const queueRef        = useRef<string[]>([]);
+    const isPlayingRef    = useRef(false);
     const onPlayingStateChangeRef = useRef(onPlayingStateChange);
+
+    // Keep the callback ref fresh without re-triggering effects
     useEffect(() => {
         onPlayingStateChangeRef.current = onPlayingStateChange;
     });
 
+    // 1. Add incoming chunks to the queue, then try to start playback
     useEffect(() => {
-        if (!audioData) return;
+        if (!newAudioChunk) return;
+        queueRef.current.push(newAudioChunk.url);
+        playNext();
+    }, [newAudioChunk]);
 
-        // Stop any audio that's already playing
+    // 2. Handle user interruptions — clear queue and stop current audio immediately
+    useEffect(() => {
+        if (clearTrigger <= 0) return;
+        queueRef.current = [];
         if (audioRef.current) {
             audioRef.current.pause();
+            audioRef.current.removeAttribute('src');
             audioRef.current = null;
         }
+        if (isPlayingRef.current) {
+            isPlayingRef.current = false;
+            onPlayingStateChangeRef.current?.(false);
+        }
+    }, [clearTrigger]);
 
-        try {
-            const audio = new Audio(audioData);
-            audioRef.current = audio;
+    // 3. Internal playback loop
+    const playNext = () => {
+        if (isPlayingRef.current || queueRef.current.length === 0) return;
 
-            audio.onplay = () => onPlayingStateChangeRef.current?.(true);
-            audio.onended = () => onPlayingStateChangeRef.current?.(false);
-            audio.onerror = (e) => {
-                console.error('Audio error:', e);
-                onPlayingStateChangeRef.current?.(false);
-            };
+        const nextUrl = queueRef.current.shift();
+        if (!nextUrl) return;
 
-            if (autoPlay) {
-                audio.play().catch((err) => console.error('Autoplay failed:', err));
-            }
-        } catch (err) {
-            console.error('Failed to play audio:', err);
+        isPlayingRef.current = true;
+        onPlayingStateChangeRef.current?.(true);
+
+        const audio = new Audio(nextUrl);
+        audioRef.current = audio;
+
+        // FIX: Pre-load the next chunk in the queue while this one plays.
+        // Creating the Audio object triggers the browser to start fetching
+        // the resource immediately, so there's no gap between sentences.
+        if (queueRef.current.length > 0) {
+            new Audio(queueRef.current[0]);
         }
 
-        return () => {
-            // Stop audio when audioData changes or component unmounts
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current = null;
+        audio.onended = () => {
+            isPlayingRef.current = false;
+            audioRef.current = null;
+
+            if (queueRef.current.length === 0) {
+                onPlayingStateChangeRef.current?.(false);
+            } else {
+                playNext();
             }
         };
-    }, [audioData, autoPlay]);
+
+        audio.onerror = (e) => {
+            console.error('Audio chunk error:', e);
+            isPlayingRef.current = false;
+            audioRef.current = null;
+            playNext(); // Skip broken chunk and continue
+        };
+
+        audio.play().catch((err) => {
+            console.error('Autoplay blocked or failed:', err);
+            isPlayingRef.current = false;
+            audioRef.current = null;
+            onPlayingStateChangeRef.current?.(false);
+        });
+    };
 
     return null;
 }

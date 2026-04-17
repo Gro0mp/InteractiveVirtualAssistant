@@ -1,9 +1,11 @@
 import type {ChatHistoryListResponse} from "../../services/api.ts";
 import React, {useEffect, useState} from "react";
 import {AnimatePresence, motion} from "framer-motion";
-import {ChevronDown, MessageSquare, X} from "lucide-react";
+import {ChevronDown, MessageSquare, TrashIcon, X} from "lucide-react";
+import {Button} from "../ui/Button.tsx";
+import {api} from "../../services/api.ts";
 
-export function ChatHistoryPanel({ messages }: { messages: ChatHistoryListResponse[] }) {
+export function ChatHistoryPanel({ messages, onDelete }: { messages: ChatHistoryListResponse[]; onDelete?: () => void; }) {
     const [isOpen, setIsOpen] = useState(false);
     const bottomRef = React.useRef<HTMLDivElement>(null);
 
@@ -12,6 +14,16 @@ export function ChatHistoryPanel({ messages }: { messages: ChatHistoryListRespon
             setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
         }
     }, [messages, isOpen]);
+
+    const handleDeleteHistory = async () => {
+        try {
+            await api.deleteMessageHistory();
+            setIsOpen(false);
+            onDelete?.(); // Call the callback after successful deletion
+        } catch (err) {
+            console.error('Failed to delete chat history:', err);
+        }
+    };
 
     return (
         <div className="absolute bottom-4 right-4 z-20 pointer-events-auto flex flex-col items-end gap-2">
@@ -38,6 +50,12 @@ export function ChatHistoryPanel({ messages }: { messages: ChatHistoryListRespon
                                 <span className="text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest font-mono">
                                     Chat History
                                 </span>
+                                <Button size="sm"
+                                        variant="outline"
+                                        onClick={handleDeleteHistory}
+                                        leftIcon={<TrashIcon className="h-3 w-3" />}>
+                                    Delete History
+                                </Button>
                             </div>
                             <button
                                 onClick={() => setIsOpen(false)}

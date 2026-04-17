@@ -27,6 +27,8 @@ class StompChatClient {
     private statusListeners  = new Set<StatusListener>()
     private currentUserId: number | null = null
 
+    private currentStatus: 'connected' | 'disconnected' | 'error' = 'disconnected'
+
     constructor() {
         this.client = new Client({ reconnectDelay: 3_000 })
 
@@ -80,7 +82,12 @@ class StompChatClient {
 
     onMessage(listener: MessageListener): () => void { this.messageListeners.add(listener); return () => this.messageListeners.delete(listener) }
     onError  (listener: ErrorListener  ): () => void { this.errorListeners.add(listener);   return () => this.errorListeners.delete(listener) }
-    onStatus (listener: StatusListener ): () => void { this.statusListeners.add(listener);   return () => this.statusListeners.delete(listener) }
+    onStatus(listener: StatusListener): () => void {
+        this.statusListeners.add(listener);
+        // Sync the component with the reality of the socket immediately upon subscribing
+        listener(this.currentStatus);
+        return () => this.statusListeners.delete(listener);
+    }
 
     // Subscribe to user-specific queues for messages and errors. Spring Security's STOMP support automatically routes messages to /user/queue/* based on the authenticated session.
     private subscribeToUserQueues(): void {
@@ -107,7 +114,11 @@ class StompChatClient {
 
     private emitMessage(r: ChatMessageResponse) { for (const l of this.messageListeners) l(r) }
     private emitError  (c: string)               { for (const l of this.errorListeners)   l(c) }
-    private emitStatus (s: 'connected' | 'disconnected' | 'error') { for (const l of this.statusListeners) l(s) }
+    private emitStatus (s: 'connected' | 'disconnected' | 'error') {
+        // Save the new state before broadcasting it
+        this.currentStatus = s;
+        for (const l of this.statusListeners) l(s)
+    }
 }
 
 export const wsClient = new StompChatClient()

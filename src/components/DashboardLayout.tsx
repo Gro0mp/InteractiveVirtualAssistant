@@ -1,12 +1,11 @@
 'use client'
 
 // src/components/DashboardLayout.tsx
-import React, { useState } from 'react'
+import React, {useState} from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import {usePathname, useRouter} from 'next/navigation'
 import {
     LayoutDashboard,
-    Calendar,
     MessageSquare,
     FileText,
     Settings,
@@ -14,46 +13,46 @@ import {
     Menu,
     Bell,
     User,
-    Languages,
     Sun,
-    Moon,
+    Moon, School, Mail, BriefcaseBusiness,
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../context/AuthContext'
-import { useTheme, ThemeProvider } from '../context/ThemeContext'
+import {motion, AnimatePresence} from 'framer-motion'
+import {useAuth} from '../context/AuthContext'
+import {useTheme, ThemeProvider} from '../context/ThemeContext'
 
 interface DashboardLayoutProps {
     children: React.ReactNode
 }
 
 const navItems = [
-    { icon: MessageSquare,   label: 'AI Assistant',  path: '/assistant' },
-    { icon: LayoutDashboard, label: 'Mock Interview', path: '/interview' },
-    { icon: Calendar,        label: 'Calendar',       path: '/calender'  },
-    { icon: Languages,       label: 'Translate',      path: '/translate' },
-    { icon: FileText,        label: 'Documents',      path: '/documents' },
-    { icon: Settings,        label: 'Settings',       path: '/settings'  },
+    {icon: MessageSquare, label: 'AI Assistant', path: '/assistant'},
+    {icon: LayoutDashboard, label: 'Mock Interview', path: '/interview-dashboard'},
+    {icon: FileText, label: 'Resume Review', path: '/documents'},
+    {icon: School, label: 'Study', path: '/study'},
+    {icon: Mail, label: 'Emails', path: '/emails'},
+    {icon: BriefcaseBusiness, label: 'Job Search', path: '/jobs'},
+    {icon: Settings, label: 'Settings', path: '/settings'}
 ]
 
-function DashboardLayoutInner({ children }: DashboardLayoutProps) {
+function DashboardLayoutInner({children}: DashboardLayoutProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-    const { user, logout } = useAuth()
-    const { theme, toggleTheme } = useTheme()
+    const {user, logout} = useAuth()
+    const {theme, toggleTheme} = useTheme()
     const pathname = usePathname()
     const router = useRouter()
 
     return (
         <div
             className="min-h-screen bg-neutral-50 dark:bg-[#0A0A0A] flex transition-colors duration-300"
-            style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif" }}
+            style={{fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif"}}
         >
             {/* Overlay */}
             <AnimatePresence>
                 {isSidebarOpen && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        initial={{opacity: 0}}
+                        animate={{opacity: 1}}
+                        exit={{opacity: 0}}
                         onClick={() => setIsSidebarOpen(false)}
                         className="fixed inset-0 bg-neutral-900/40 z-40"
                     />
@@ -78,10 +77,12 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                             className="flex items-center gap-2.5 group"
                             onClick={() => setIsSidebarOpen(false)}
                         >
-                            <div className="w-6 h-6 border border-neutral-300 dark:border-neutral-700 group-hover:border-blue-500 dark:group-hover:border-blue-500 flex items-center justify-center transition-colors duration-150">
-                                <img src="/logo.png" className="scale-[1.6]" alt="IVA logo" />
+                            <div
+                                className="w-6 h-6 border border-neutral-300 dark:border-neutral-700 group-hover:border-blue-500 dark:group-hover:border-blue-500 flex items-center justify-center transition-colors duration-150">
+                                <img src="/logo.png" className="scale-[1.6]" alt="IVA logo"/>
                             </div>
-                            <span className="text-xs font-semibold text-neutral-900 dark:text-white uppercase tracking-widest">
+                            <span
+                                className="text-xs font-semibold text-neutral-900 dark:text-white uppercase tracking-widest">
                                 IVA
                             </span>
                         </Link>
@@ -118,8 +119,10 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
 
                     {/* User / sign out */}
                     <div className="p-3 border-t border-neutral-100 dark:border-neutral-800">
-                        <div className="flex items-center gap-3 px-3 py-2.5 mb-2 border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
-                            <div className="w-7 h-7 flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 text-[10px] font-bold font-mono">
+                        <div
+                            className="flex items-center gap-3 px-3 py-2.5 mb-2 border border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                            <div
+                                className="w-7 h-7 flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 text-[10px] font-bold font-mono">
                                 {user?.username.charAt(0).toUpperCase()}
                             </div>
                             <div className="overflow-hidden">
@@ -140,7 +143,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                             }}
                             className="w-full flex items-center px-3 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors duration-150"
                         >
-                            <LogOut className="w-4 h-4 mr-3" strokeWidth={1.75} />
+                            <LogOut className="w-4 h-4 mr-3" strokeWidth={1.75}/>
                             Sign Out
                         </button>
                     </div>
@@ -150,13 +153,14 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
             {/* Main content */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Header */}
-                <header className="h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+                <header
+                    className="h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-colors duration-300">
                     <button
                         onClick={() => setIsSidebarOpen(true)}
                         className="cursor-pointer p-1.5 -ml-1.5 mr-2 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
                         aria-label="Open sidebar"
                     >
-                        <Menu className="w-5 h-5" />
+                        <Menu className="w-5 h-5"/>
                     </button>
 
                     <div className="flex items-center gap-1">
@@ -170,22 +174,22 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                                 {theme === 'dark' ? (
                                     <motion.span
                                         key="sun"
-                                        initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
-                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                        exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
-                                        transition={{ duration: 0.15 }}
+                                        initial={{opacity: 0, rotate: -30, scale: 0.8}}
+                                        animate={{opacity: 1, rotate: 0, scale: 1}}
+                                        exit={{opacity: 0, rotate: 30, scale: 0.8}}
+                                        transition={{duration: 0.15}}
                                     >
-                                        <Sun className="w-3.5 h-3.5" />
+                                        <Sun className="w-3.5 h-3.5"/>
                                     </motion.span>
                                 ) : (
                                     <motion.span
                                         key="moon"
-                                        initial={{ opacity: 0, rotate: 30, scale: 0.8 }}
-                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                        exit={{ opacity: 0, rotate: -30, scale: 0.8 }}
-                                        transition={{ duration: 0.15 }}
+                                        initial={{opacity: 0, rotate: 30, scale: 0.8}}
+                                        animate={{opacity: 1, rotate: 0, scale: 1}}
+                                        exit={{opacity: 0, rotate: -30, scale: 0.8}}
+                                        transition={{duration: 0.15}}
                                     >
-                                        <Moon className="w-3.5 h-3.5" />
+                                        <Moon className="w-3.5 h-3.5"/>
                                     </motion.span>
                                 )}
                             </AnimatePresence>
@@ -195,22 +199,24 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                             className="relative p-2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150 cursor-pointer"
                             aria-label="Notifications"
                         >
-                            <Bell className="w-4 h-4" />
-                            <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full border-2 border-white dark:border-neutral-950" />
+                            <Bell className="w-4 h-4"/>
+                            <span
+                                className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full border-2 border-white dark:border-neutral-950"/>
                         </button>
 
                         <button
                             className="p-2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150 cursor-pointer"
                             aria-label="Settings"
                         >
-                            <Settings className="w-4 h-4" />
+                            <Settings className="w-4 h-4"/>
                         </button>
 
                         <button
                             className="p-2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150 cursor-pointer"
                             aria-label="Profile"
+                            onClick={() => router.push('/settings')}
                         >
-                            <User className="w-4 h-4" />
+                            <User className="w-4 h-4"/>
                         </button>
                     </div>
                 </header>
@@ -223,7 +229,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     )
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({children}: DashboardLayoutProps) {
     return (
         <DashboardLayoutInner>{children}</DashboardLayoutInner>
     )

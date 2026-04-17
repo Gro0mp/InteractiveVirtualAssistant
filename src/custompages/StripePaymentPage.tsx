@@ -14,7 +14,6 @@ export function StripePaymentPage() {
   const [success, setSuccess] = useState(false)
   const [sessionId, setSessionId] = useState<string>('')
   const [loadingPlan, setLoadingPlan] = useState<CheckoutPlan | null>(null)
-  const { user, isAuthenticated, isLoading } = useAuth()
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search)

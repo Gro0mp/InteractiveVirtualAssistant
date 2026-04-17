@@ -9,9 +9,10 @@ type AssistantProps = React.JSX.IntrinsicElements['group'] & {
 
 export function Assistant({ animationName, idleAnimation, ...props }: AssistantProps) {
     const groupRef = useRef<THREE.Group>(null)
-    const { scene, animations } = useGLTF('/models/robot.glb')
+    const { scene, animations } = useGLTF('/models/robot3.glb')
     const { actions, names, mixer } = useAnimations(animations, groupRef)
 
+    console.log(animations)
 
     useEffect(() => {
         // Start all animations when the component mounts
