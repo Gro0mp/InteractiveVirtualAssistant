@@ -7,6 +7,10 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "find_additional_modules": true,
+  "rules": [
+    { "type": "ESModule", "globs": ["**/*.js", "**/*.mjs"] }
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
