@@ -3,7 +3,13 @@
 import React, { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
-import { Assistant } from '../assistant/Assistant'
+
+// The 3D interview assistant is a bit heavy, so we load it dynamically without SSR
+import dynamic from 'next/dynamic'
+const Assistant = dynamic(
+    () => import('../assistant/Assistant').then(m => m.Assistant),
+    { ssr: false }
+)
 
 type Props = {
     animationName?: string

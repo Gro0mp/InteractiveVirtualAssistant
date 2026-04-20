@@ -71,4 +71,4 @@ export function Assistant({ animationName, idleAnimation, ...props }: AssistantP
     )
 }
 
-useGLTF.preload('/models/robot.glb')
+useGLTF.preload('/models/robot3.glb')

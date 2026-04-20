@@ -6,5 +6,13 @@ const nextConfig = {
     },
     experimental: {
         optimizePackageImports: ['lucide-react', 'recharts'],
-    }
+    },
+    serverExternalPackages: [
+        'three',
+        '@react-three/fiber',
+        '@react-three/drei',
+        'pdfjs-dist',
+        'mammoth',
+        'pdf-lib',
+    ],
 }
