@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { api, type User } from '../services/api'
+import { wsClient } from '../services/ws'
 
 interface AuthContextType {
     user: User | null
@@ -15,7 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
-    const [user, setUser]       = useState<User | null>(null)
+    const [user, setUser] = useState<User | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
@@ -61,6 +62,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     const logout = () => {
         setUser(null)
         localStorage.removeItem('user')
+        wsClient.disconnect()
         // Call backend to invalidate the JSESSIONID session cookie.
         // Spring Security's logout endpoint is /logout (not /api/v1/logout).
         api.logout().catch(err => console.error('Server logout failed:', err))
@@ -73,7 +75,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
             setUser(me)
             localStorage.setItem('user', JSON.stringify(me))
         } finally {
-            setIsLoading(false)
+
         }
     }
 

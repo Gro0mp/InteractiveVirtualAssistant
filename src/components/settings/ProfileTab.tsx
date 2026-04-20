@@ -35,6 +35,7 @@ export function ProfileTab({ user }: Props) {
     const handleSave = () => {
         // wire to API
 
+
         setSaved(true)
         setTimeout(() => setSaved(false), 2500)
     }
@@ -147,35 +148,35 @@ export function ProfileTab({ user }: Props) {
                 </div>
             </SettingsSection>
 
-            {/*/!* Target role *!/*/}
-            {/*<SettingsSection tag="03" title="Career Focus" description="Used to personalise interview questions" accentCorner="tl">*/}
-            {/*    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">*/}
-            {/*        <div>*/}
-            {/*            <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-widest font-mono">*/}
-            {/*                Target Role*/}
-            {/*            </label>*/}
-            {/*            <select className="w-full h-10 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-sm font-mono text-neutral-900 dark:text-white px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 rounded-sm appearance-none cursor-pointer">*/}
-            {/*                <option>Product Manager</option>*/}
-            {/*                <option>Software Engineer</option>*/}
-            {/*                <option>Data Analyst</option>*/}
-            {/*                <option>Product Designer</option>*/}
-            {/*                <option>Engineering Manager</option>*/}
-            {/*                <option>Other</option>*/}
-            {/*            </select>*/}
-            {/*        </div>*/}
-            {/*        <div>*/}
-            {/*            <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-widest font-mono">*/}
-            {/*                Experience Level*/}
-            {/*            </label>*/}
-            {/*            <select className="w-full h-10 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-sm font-mono text-neutral-900 dark:text-white px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 rounded-sm appearance-none cursor-pointer">*/}
-            {/*                <option>Entry level (0–2 yrs)</option>*/}
-            {/*                <option>Mid level (2–5 yrs)</option>*/}
-            {/*                <option>Senior (5–8 yrs)</option>*/}
-            {/*                <option>Staff / Principal (8+ yrs)</option>*/}
-            {/*            </select>*/}
-            {/*        </div>*/}
-            {/*    </div>*/}
-            {/*</SettingsSection>*/}
+            {/* Target role */}
+            <SettingsSection tag="03" title="Career Focus" description="Used to personalise interview questions" accentCorner="tl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-widest font-mono">
+                            Target Role
+                        </label>
+                        <select className="w-full h-10 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-sm font-mono text-neutral-900 dark:text-white px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 rounded-sm appearance-none cursor-pointer">
+                            <option>Product Manager</option>
+                            <option>Software Engineer</option>
+                            <option>Data Analyst</option>
+                            <option>Product Designer</option>
+                            <option>Engineering Manager</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 uppercase tracking-widest font-mono">
+                            Experience Level
+                        </label>
+                        <select className="w-full h-10 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-sm font-mono text-neutral-900 dark:text-white px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 rounded-sm appearance-none cursor-pointer">
+                            <option>Entry level (0–2 yrs)</option>
+                            <option>Mid level (2–5 yrs)</option>
+                            <option>Senior (5–8 yrs)</option>
+                            <option>Staff / Principal (8+ yrs)</option>
+                        </select>
+                    </div>
+                </div>
+            </SettingsSection>
 
             {/* Save bar */}
             <div className="flex items-center justify-between px-5 py-3 border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">

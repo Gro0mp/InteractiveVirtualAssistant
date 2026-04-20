@@ -6,10 +6,15 @@ type Theme = 'dark' | 'light'
 
 interface ThemeContextValue {
     theme: Theme
+    setTheme: (theme: Theme) => void
     toggleTheme: () => void
 }
 
-const ThemeContext = createContext<ThemeContextValue>({ theme: 'dark', toggleTheme: () => {} })
+const ThemeContext = createContext<ThemeContextValue>({
+    theme: 'dark',
+    setTheme: () => {},
+    toggleTheme: () => {},
+})
 
 function normalizeTheme(v: unknown): Theme {
     return v === 'light' ? 'light' : 'dark'
@@ -45,6 +50,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const value = useMemo<ThemeContextValue>(() => ({
         theme,
+        setTheme,
         toggleTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')),
     }), [theme])
 

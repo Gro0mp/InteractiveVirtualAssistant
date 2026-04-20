@@ -203,7 +203,7 @@ export function InterviewFeedbackPage() {
     const improvements: FeedbackPoint[] = feedback ? toFeedbackPoints(feedback.improvements) : []
 
     const meta: FeedbackMeta = {
-        sessionTitle: feedback?.sessionTitle ?? session?.description ?? 'Mock Interview',
+        sessionTitle: feedback?.sessionTitle ?? session?.title ?? 'Mock Interview',
         date: session?.createdAt
             ? new Date(session.createdAt).toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric',

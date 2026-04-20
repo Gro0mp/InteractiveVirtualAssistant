@@ -1,13 +1,19 @@
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Shield, Eye, EyeOff, Smartphone, Monitor, AlertTriangle } from 'lucide-react'
+import { Shield, Eye, EyeOff } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { SettingsSection } from './SettingsSection'
 import { SettingsToggle } from './SettingsToggle'
 import { SettingsRow } from './SettingsRow'
+import { api } from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
 
-export function SecurityTab()   {
+export function SecurityTab() {
+    const router = useRouter()
+    const { logout } = useAuth()
+
     const [showCurrent, setShowCurrent] = useState(false)
     const [showNew, setShowNew] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
@@ -20,10 +26,34 @@ export function SecurityTab()   {
     const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' })
     const [pwSaved, setPwSaved] = useState(false)
 
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+    const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null)
+
     const handlePasswordSave = () => {
         setPwSaved(true)
         setTimeout(() => setPwSaved(false), 2500)
         setPasswords({ current: '', new: '', confirm: '' })
+    }
+
+    const handleDeleteAccount = async () => {
+        setDeleteAccountError(null)
+
+        const confirmed = window.confirm(
+            'Delete your account permanently? This will remove your profile and all associated data.'
+        )
+        if (!confirmed) return
+
+        setIsDeletingAccount(true)
+        try {
+            await api.deleteAccount()
+            logout()
+            router.replace('/login?accountDeleted=1')
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to delete account. Please try again.'
+            setDeleteAccountError(message)
+        } finally {
+            setIsDeletingAccount(false)
+        }
     }
 
     const newStrength = passwords.new.length === 0 ? null
@@ -194,11 +224,19 @@ export function SecurityTab()   {
                     <Button
                         variant="outline"
                         size="sm"
+                        isLoading={isDeletingAccount}
+                        onClick={handleDeleteAccount}
                         className="border-red-300 dark:border-red-900 text-red-600 dark:text-red-400 hover:border-red-500 dark:hover:border-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
                     >
-                        Delete account
+                        {isDeletingAccount ? 'Deleting…' : 'Delete account'}
                     </Button>
                 </SettingsRow>
+
+                {deleteAccountError && (
+                    <p className="mt-3 text-[11px] font-mono text-red-500 border border-red-200 dark:border-red-900/70 bg-red-50/60 dark:bg-red-950/30 px-3 py-2 rounded-sm">
+                        {deleteAccountError}
+                    </p>
+                )}
             </SettingsSection>
         </motion.div>
     )

@@ -28,7 +28,12 @@ export default function SignUpPage() {
     setIsLoading(true);
     try {
       const response = await api.signUp({ username: formData.name, email: formData.email, password: formData.password });
-      login({ id: response.id, username: response.username, email: response.email });
+      login({
+        id: response.id,
+        username: response.username,
+        email: response.email,
+        setUpComplete: response.setUpComplete,
+      });
       router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign up failed. Please try again.');

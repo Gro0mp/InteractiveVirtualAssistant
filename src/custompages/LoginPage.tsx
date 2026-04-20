@@ -21,13 +21,20 @@ export default function LoginPage() {
     if (error) setError('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
     try {
-      const response = await api.login({ email: formData.email, password: formData.password });
-      login({ id: response.id, username: response.username, email: response.email, last_login: response.last_login });
+      const response = await api.login({ email: formData.email, password: formData.password }); // Logs in and returns user data
+      // Store user data in context and localStorage
+      login({
+        id: response.id,
+        username: response.username,
+        email: response.email,
+        last_login: response.last_login,
+        setUpComplete: response.setUpComplete,
+      });
       router.push('/assistant');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');

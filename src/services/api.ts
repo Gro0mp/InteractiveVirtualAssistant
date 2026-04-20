@@ -32,19 +32,33 @@ export interface User {
     plan?: 'FREE' | 'BASIC' | 'PROFESSIONAL'
     avatar_url?: string
     last_login?: string
+    setUpComplete: boolean
+}
+
+export interface AccountSetupRequest {
+    firstName: string
+    lastName: string
+    jobTitle: string
+    company: string
+    experienceLevel: string        // "JUNIOR" | "MID" | "SENIOR" | "LEAD"
+    goals: string                  // comma-separated, e.g. "interview_prep,resume_review"
+    theme: string                  // "light" | "dark" | "system"
+    emailNotifications: boolean
+    weeklyDigest: boolean
+    interviewReminders: boolean
 }
 
 export type AuthResponse = User & { message?: string }
 
 export interface LoginRequest {
     email: string;
-    password: string
+    password: string;
 }
 
 export interface SignUpRequest {
     username: string;
     email: string;
-    password: string
+    password: string;
 }
 
 export interface ChatHistoryListRequest {
@@ -60,10 +74,11 @@ export interface ChatHistoryListResponse {
 
 export interface InterviewSessionResponse {
     id: number
-    description: string
+    title: string // AI job description
     createdAt: string
-    messages: number
     status: 'IN_PROGRESS' | 'COMPLETED' | string
+    questionsAnswered: number
+    totalQuestions: number
 }
 
 export interface InterviewMessageResponse {
@@ -170,6 +185,16 @@ class ApiService {
         return res.json()
     }
 
+    async completeAccountSetup(req: AccountSetupRequest): Promise<void> {
+        const res = await fetch(`${API_BASE}/users/complete-setup`, {
+            method: 'POST',
+            headers: csrfHeaders({'Content-Type': 'application/json'}),
+            body: JSON.stringify(req),
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Account setup failed')
+    }
+
     async getCurrentUser(): Promise<User> {
         try {
             const res = await fetchWithTimeout(`${API_BASE}/users/me`, {
@@ -183,6 +208,7 @@ class ApiService {
             throw err
         }
     }
+
 
     // FIX: logout is at /logout (Spring Security default), not /api/v1/logout
     async logout(): Promise<void> {
@@ -214,13 +240,14 @@ class ApiService {
         if (!response.ok) throw new Error(await response.text() || 'Failed to delete chat history')
     }
 
-    async createInterviewSession(description: string, s3Key?: string): Promise<InterviewSessionResponse> {
+    async createInterviewSession(description: string, interviewLength: string, s3Key?: string): Promise<InterviewSessionResponse> {
         const res = await fetch(`${API_BASE}/interview/new-session`, {
             method: 'POST',
             headers: csrfHeaders({'Content-Type': 'application/json'}),
             body: JSON.stringify({
                 jobDescription: description,
                 resumeS3Key: s3Key ?? null,
+                interviewLength: interviewLength,
             }),
             credentials: 'include',
         })
@@ -231,10 +258,29 @@ class ApiService {
         const s: any = await res.json()
         return {
             id: s.id,
-            description: String(s.description ?? ''),
+            title: String(s.title ?? ''),
             createdAt: String(s.created_at ?? ''),
-            messages: Number(s.messages ?? 0),
             status: String(s.status ?? 'IN_PROGRESS'),
+            questionsAnswered: Number(s.questionsAnswered ?? 0),
+            totalQuestions: Number(s.totalQuestions ?? 0),
+        }
+    }
+
+    async getCurrentInterviewSession(sessionId: number): Promise<InterviewSessionResponse> {
+        const res = await fetch(`${API_BASE}/interview/session/${sessionId}`, {
+            method: 'GET',
+            headers: csrfHeaders(),
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Failed to get interview session')
+        const s: any = await res.json()
+        return {
+            id: s.id,
+            title: String(s.title ?? ''),
+            createdAt: String(s.created_at ?? ''),
+            status: String(s.status ?? 'IN_PROGRESS'),
+            questionsAnswered: Number(s.questionsAnswered ?? 0),
+            totalQuestions: Number(s.totalQuestions ?? 0),
         }
     }
 
@@ -247,10 +293,11 @@ class ApiService {
         const data = await handleResponse<any[]>(res)
         return data.map(s => ({
             id: s.id,
-            description: String(s.description ?? ''),
+            title: String(s.title ?? ''),
             createdAt: String(s.created_at ?? ''),
-            messages: Number(s.messages ?? 0),
             status: String(s.status ?? 'IN_PROGRESS'),
+            questionsAnswered: Number(s.questionsAnswered ?? 0),
+            totalQuestions: Number(s.totalQuestions ?? 0),
         }))
     }
 
@@ -260,7 +307,11 @@ class ApiService {
             headers: csrfHeaders(),
             credentials: 'include',
         })
-        if (!res.ok) throw new Error(await res.text() || 'Failed to delete session')
+        if (!res.ok) {
+            const text = await res.text().catch(() => '')
+            if (res.status === 404) throw new Error('SESSION_NOT_FOUND')
+            throw new Error(text || 'Failed to delete session')
+        }
     }
 
     async sendInterviewMessage(sessionId: number, userMessage: string): Promise<InterviewMessageResponse> {
@@ -407,7 +458,7 @@ class ApiService {
     // Inside api.ts
     async deleteDocument(s3Key: string): Promise<void> {
         // Correctly format the parameter into the URL string
-        const params = new URLSearchParams({ s3Key });
+        const params = new URLSearchParams({s3Key});
 
         const res = await fetch(`${API_BASE}/documents/delete?${params.toString()}`, {
             method: 'DELETE',
@@ -429,6 +480,15 @@ class ApiService {
         })
         if (!res.ok) throw new Error(await res.text() || 'Translation failed')
         return res.json()
+    }
+
+    async deleteAccount(): Promise<void> {
+        const res = await fetch(`${API_BASE}/users/delete-user`, {
+            method: 'DELETE',
+            headers: csrfHeaders(),
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Failed to delete account')
     }
 }
 

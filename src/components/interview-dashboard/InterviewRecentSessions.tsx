@@ -67,7 +67,7 @@ export function InterviewRecentSessions({ sessions, feedbackHistory, onOpen, onV
                 ) : sessions.map((s, i) => {
                     const cfg = statusConfig[s.status as keyof typeof statusConfig] || statusConfig.IN_PROGRESS
                     const isCompleted = s.status === 'COMPLETED'
-                    const progress = 8 > 0 ? Math.round((s.messages / 8) * 100) : 0
+                    const progress = 8 > 0 ? Math.round((s.questionsAnswered / s.totalQuestions) * 100) : 0
 
                     // Match the feedback score to this session
                     const sessionFeedback = feedbackHistory?.find(f => f.sessionId === s.id)
@@ -85,7 +85,7 @@ export function InterviewRecentSessions({ sessions, feedbackHistory, onOpen, onV
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1.5">
                                     <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                                        {s.description || 'Mock Interview'}
+                                        {s.title || 'Mock Interview'}
                                     </h3>
                                     {isCompleted && (
                                         <span className="shrink-0 text-[9px] font-mono text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 uppercase tracking-wider rounded-sm">
@@ -96,7 +96,7 @@ export function InterviewRecentSessions({ sessions, feedbackHistory, onOpen, onV
                                 <div className="flex items-center gap-3 text-[10px] font-mono text-neutral-500 dark:text-neutral-500 uppercase tracking-wider">
                                     <span>{new Date(s.createdAt).toLocaleDateString()}</span>
                                     <span className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700" />
-                                    <span>{s.messages} Messages</span>
+                                    <span>{s.questionsAnswered / s.totalQuestions} Messages</span>
                                 </div>
                             </div>
 

@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, FileText, Upload, X } from 'lucide-react'
-import { Button } from '../ui/Button'
+
+const MAX_PDF_SIZE_MB = 5
+const MAX_PDF_SIZE_BYTES = MAX_PDF_SIZE_MB * 1024 * 1024
 
 export type InterviewSetupValue = {
     jobDescriptionText: string
+    interviewLength: "SHORT" | "REGULAR" | "LONG"
     source: 'paste' | 'file'
     fileName?: string
 }
@@ -21,6 +24,11 @@ export function InterviewSetupPanel({ value, onChange, onStart, isStarting, onBa
     const [isDragging, setIsDragging] = useState(false)
     const [pasteText, setPasteText] = useState('')
     const [file, setFile] = useState<File | null>(null)
+    const [isExtractingPdf, setIsExtractingPdf] = useState(false)
+    const [uploadError, setUploadError] = useState<string | null>(null)
+    const [interviewLength, setInterviewLength] = useState<InterviewSetupValue['interviewLength']>(
+        value?.interviewLength ?? 'REGULAR'
+    )
 
     const fileUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
 
@@ -29,24 +37,95 @@ export function InterviewSetupPanel({ value, onChange, onStart, isStarting, onBa
         return () => URL.revokeObjectURL(fileUrl)
     }, [fileUrl])
 
+    useEffect(() => {
+        if (value?.interviewLength) {
+            setInterviewLength(value.interviewLength)
+        }
+    }, [value?.interviewLength])
+
     const handleFileSelection = async (selected: File) => {
-        setFile(selected)
-        setPasteText('')
+        setUploadError(null)
+
+        const isPdf =
+            selected.type === 'application/pdf' || selected.name.toLowerCase().endsWith('.pdf')
+        if (!isPdf) {
+            setFile(null)
+            onChange(null)
+            setUploadError('Only PDF files are supported for job descriptions.')
+            return
+        }
+
+        if (selected.size > MAX_PDF_SIZE_BYTES) {
+            setFile(null)
+            onChange(null)
+            setUploadError(`File is too large. Maximum size is ${MAX_PDF_SIZE_MB}MB.`)
+            return
+        }
+
+        setIsExtractingPdf(true)
         try {
-            const text = await selected.text()
+            // Dynamic import keeps pdfjs out of the SSR bundle (avoids DOMMatrix crash)
+            const { pdfjs } = await import('react-pdf')
+            pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+
+            const buffer = await selected.arrayBuffer()
+            const loadingTask = pdfjs.getDocument({ data: buffer })
+            const pdf = await loadingTask.promise
+
+            let extracted = ''
+            for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex += 1) {
+                const page = await pdf.getPage(pageIndex)
+                const content = await page.getTextContent()
+                const pageText = content.items
+                    .map((item) => ('str' in item ? item.str : ''))
+                    .join(' ')
+                    .trim()
+                if (pageText) extracted += `${pageText}\n\n`
+            }
+
+            const text = extracted.trim()
+            if (!text) {
+                setFile(null)
+                onChange(null)
+                setUploadError('Could not extract text from this PDF. Try another file.')
+                return
+            }
+
+            setFile(selected)
+            setPasteText('')
             const next: InterviewSetupValue = {
-                jobDescriptionText: (text || '').trim(),
+                jobDescriptionText: text,
+                interviewLength,
                 source: 'file',
                 fileName: selected.name,
             }
-            onChange(next.jobDescriptionText ? next : null)
+            onChange(next)
         } catch (e) {
             console.error('Failed to read file:', e)
+            setFile(null)
             onChange(null)
+            setUploadError('Failed to read PDF. Please try a different file.')
+        } finally {
+            setIsExtractingPdf(false)
         }
     }
 
     const canStart = Boolean(value?.jobDescriptionText && value.jobDescriptionText.trim().length > 0)
+    const hasPastedDescription = value?.source === 'paste' && Boolean(value.jobDescriptionText.trim())
+    const isPasteLocked = value?.source === 'file' && Boolean(value.jobDescriptionText.trim())
+    const isUploadLocked = hasPastedDescription
+
+    const clearUploadedDescription = () => {
+        setFile(null)
+        setUploadError(null)
+        if (value?.source === 'file') onChange(null)
+    }
+
+    const handleLengthChange = (length: InterviewSetupValue['interviewLength']) => {
+        setInterviewLength(length)
+        if (!value?.jobDescriptionText?.trim()) return
+        onChange({ ...value, interviewLength: length })
+    }
 
     return (
         <div className="h-full flex flex-col bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 overflow-hidden transition-colors duration-300 relative">
@@ -57,7 +136,7 @@ export function InterviewSetupPanel({ value, onChange, onStart, isStarting, onBa
             <span className="absolute bottom-0 right-0 h-8 w-px bg-blue-500" aria-hidden />
 
             {/* Terminal header */}
-            <div className="px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+            <div className="shrink-0 px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
                 <div className="flex items-center gap-3 mb-1">
                     <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700" />
                     <span className="w-2 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700" />
@@ -71,9 +150,12 @@ export function InterviewSetupPanel({ value, onChange, onStart, isStarting, onBa
                 </p>
             </div>
 
+            {/* Scrollable body — all sections are shrink-0 so they never compress */}
             <div className="flex-1 min-h-0 p-5 flex flex-col gap-4 overflow-y-auto">
-                {/* Paste section */}
-                <div className="border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+
+                {/* 01 — Paste section */}
+                <div className="shrink-0 border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+                    {/* Section header */}
                     <div className="px-4 py-2.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <span className="w-1 h-1 rounded-full bg-blue-500" />
@@ -95,18 +177,30 @@ export function InterviewSetupPanel({ value, onChange, onStart, isStarting, onBa
                             </button>
                         )}
                     </div>
+                    {/* Fixed-height textarea — never grows */}
                     <textarea
                         value={pasteText}
+                        disabled={isPasteLocked || isExtractingPdf}
                         onChange={(e) => {
                             const nextText = e.target.value
                             setPasteText(nextText)
-                            setFile(null)
                             const trimmed = nextText.trim()
-                            onChange(trimmed ? { jobDescriptionText: trimmed, source: 'paste' } : null)
+                            onChange(trimmed ? {
+                                jobDescriptionText: trimmed,
+                                interviewLength,
+                                source: 'paste',
+                            } : null)
                         }}
                         placeholder="Paste the job description here…"
-                        className="w-full h-[200px] resize-none bg-transparent px-4 py-3 text-[12px] font-mono leading-relaxed text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 outline-none"
+                        className="w-full h-[180px] min-h-[180px] max-h-[180px] resize-none overflow-y-auto bg-transparent px-4 py-3 text-[12px] font-mono leading-relaxed text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     />
+                    {isPasteLocked && (
+                        <div className="px-4 py-2 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                            <p className="text-[9px] font-mono text-neutral-400 dark:text-neutral-600 uppercase tracking-widest">
+                                Clear uploaded PDF to switch to paste mode.
+                            </p>
+                        </div>
+                    )}
                     {pasteText && (
                         <div className="px-4 py-2 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex items-center gap-2">
                             <span className="w-1 h-1 rounded-full bg-emerald-500" />
@@ -117,18 +211,26 @@ export function InterviewSetupPanel({ value, onChange, onStart, isStarting, onBa
                     )}
                 </div>
 
-                {/* Dropzone */}
+                {/* 02 — Dropzone */}
                 <div
                     className={[
-                        'border-2 border-dashed p-5 transition-colors duration-150 cursor-pointer',
+                        'shrink-0 border-2 border-dashed p-5 transition-colors duration-150 cursor-pointer',
+                        isUploadLocked && !isDragging
+                            ? 'opacity-60 cursor-not-allowed'
+                            : '',
                         isDragging
                             ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-950/20'
                             : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700',
                     ].join(' ')}
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                    onDragOver={(e) => {
+                        e.preventDefault()
+                        if (isUploadLocked || isExtractingPdf) return
+                        setIsDragging(true)
+                    }}
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={(e) => {
                         e.preventDefault(); setIsDragging(false)
+                        if (isUploadLocked || isExtractingPdf) return
                         const dropped = e.dataTransfer.files?.[0]
                         if (dropped) void handleFileSelection(dropped)
                     }}
@@ -143,25 +245,54 @@ export function InterviewSetupPanel({ value, onChange, onStart, isStarting, onBa
                                 <span className="text-[9px] font-mono font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">
                                     02 — Drop a file
                                 </span>
+                                {value?.source === 'file' && value.fileName && (
+                                    <button
+                                        type="button"
+                                        onClick={clearUploadedDescription}
+                                        className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                                        aria-label="Clear uploaded PDF"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                )}
                             </div>
                             <p className="text-[10px] font-mono text-neutral-400 dark:text-neutral-600 mb-4">
-                                TXT, MD, or DOC — reads as plain text
+                                PDF only, up to {MAX_PDF_SIZE_MB}MB
                             </p>
+
+                            {isUploadLocked && (
+                                <p className="mb-3 text-[10px] font-mono text-neutral-400 dark:text-neutral-600 uppercase tracking-widest">
+                                    Clear pasted text to switch to upload mode.
+                                </p>
+                            )}
+
+                            {isExtractingPdf && (
+                                <p className="mb-3 text-[10px] font-mono text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                                    Extracting PDF text...
+                                </p>
+                            )}
+
+                            {uploadError && (
+                                <p className="mb-3 text-[10px] font-mono text-red-500 uppercase tracking-widest">
+                                    {uploadError}
+                                </p>
+                            )}
 
                             <div className="flex items-center gap-3">
                                 <div className="relative">
                                     <input
                                         type="file"
                                         className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                                        disabled={isExtractingPdf || isUploadLocked}
                                         onChange={(e) => {
                                             const f = e.target.files?.[0]
                                             if (f) void handleFileSelection(f)
                                         }}
-                                        accept=".txt,.md,.doc,.docx,text/plain,text/markdown"
+                                        accept=".pdf,application/pdf"
                                     />
                                     <div className="inline-flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 px-3 py-1.5 text-[10px] font-mono text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors duration-150">
                                         <FileText className="h-3 w-3" />
-                                        Browse
+                                        {isExtractingPdf ? 'Reading...' : 'Browse'}
                                     </div>
                                 </div>
 
@@ -183,6 +314,46 @@ export function InterviewSetupPanel({ value, onChange, onStart, isStarting, onBa
                         </div>
                     </div>
                 </div>
+
+                {/* 03 — Interview length */}
+                <div className="shrink-0 border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+                    <div className="px-4 py-2.5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full bg-blue-500" />
+                        <span className="text-[9px] font-mono font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">
+                            03 - Interview length
+                        </span>
+                    </div>
+                    <div className="px-3 pt-2.5 pb-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {([
+                            { key: 'SHORT', label: 'Short', sub: 'Quick practice' },
+                            { key: 'REGULAR', label: 'Regular', sub: 'Balanced flow' },
+                            { key: 'LONG', label: 'Long', sub: 'Deep interview' },
+                        ] as const).map((option) => {
+                            const isSelected = interviewLength === option.key
+                            return (
+                                <button
+                                    key={option.key}
+                                    type="button"
+                                    onClick={() => handleLengthChange(option.key)}
+                                    className={[
+                                        'text-left px-3 py-2.5 border transition-colors duration-150',
+                                        isSelected
+                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                                            : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700',
+                                    ].join(' ')}
+                                >
+                                    <p className="text-[11px] font-mono font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
+                                        {option.label}
+                                    </p>
+                                    <p className="mt-1 text-[9px] font-mono text-neutral-400 dark:text-neutral-600 uppercase tracking-widest">
+                                        {option.sub}
+                                    </p>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+
             </div>
 
             {/* Footer */}

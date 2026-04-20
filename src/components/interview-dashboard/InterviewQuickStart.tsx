@@ -1,26 +1,30 @@
 import React from 'react'
-import { motion } from 'framer-motion'
-import { ArrowRight, CornerDownRight } from 'lucide-react'
+import { ArrowRight, Clock3, CornerDownRight } from 'lucide-react'
 import { Button } from '../ui/Button'
+
+type QuickStartRecentSession = {
+    id: number
+    title: string
+    createdAtLabel: string
+    status: string
+}
 
 type Props = {
     lastSessionTitle?: string
     lastSessionId?: number
+    recentSessions?: QuickStartRecentSession[]
     onNewSession: () => void
     onResumeSession?: (id: number) => void
-    completedThisWeek: number
-    weeklyGoal: number
 }
 
 export function InterviewQuickStart({
                                         lastSessionTitle,
                                         lastSessionId,
+                                        recentSessions,
                                         onNewSession,
                                         onResumeSession,
-                                        completedThisWeek,
-                                        weeklyGoal,
                                     }: Props) {
-    const weekProgress = Math.min(100, Math.round((completedThisWeek / weeklyGoal) * 100))
+    const sessionsToShow = recentSessions?.slice(0, 3) ?? []
 
     return (
         <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 relative overflow-hidden transition-colors duration-300 h-full flex flex-col">
@@ -39,36 +43,7 @@ export function InterviewQuickStart({
                 </span>
             </div>
 
-            <div className="flex-1 px-5 py-5 flex flex-col gap-4">
-                {/* Weekly goal progress */}
-                <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-[9px] font-mono text-neutral-400 dark:text-neutral-600 uppercase tracking-widest">
-                            Weekly Goal
-                        </span>
-                        <span className="text-[9px] font-mono text-neutral-500 dark:text-neutral-400">
-                            {completedThisWeek} / {weeklyGoal} sessions
-                        </span>
-                    </div>
-                    <div className="h-px bg-neutral-100 dark:bg-neutral-800 relative">
-                        <motion.div
-                            className="absolute left-0 top-0 h-full bg-blue-500"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${weekProgress}%` }}
-                            transition={{ duration: 0.8, ease: 'easeOut' }}
-                        />
-                    </div>
-                    <div className="mt-1.5 flex justify-between">
-                        <span className="text-[9px] font-mono text-neutral-300 dark:text-neutral-700">0</span>
-                        <span className={[
-                            'text-[9px] font-mono',
-                            weekProgress >= 100 ? 'text-emerald-500' : 'text-neutral-400 dark:text-neutral-600'
-                        ].join(' ')}>
-                            {weekProgress >= 100 ? '✓ Goal reached!' : `${weekProgress}%`}
-                        </span>
-                    </div>
-                </div>
-
+            <div className="flex-1 px-5 py-4 flex flex-col gap-3">
                 {/* Divider */}
                 <div className="h-px bg-neutral-100 dark:bg-neutral-800" />
 
@@ -98,6 +73,43 @@ export function InterviewQuickStart({
                             </div>
                             <CornerDownRight className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-600 group-hover:text-blue-500 shrink-0 ml-3 transition-colors" />
                         </button>
+                    )}
+                </div>
+
+                <div className="h-px bg-neutral-100 dark:bg-neutral-800" />
+
+                {/* Recent activity keeps this panel informative even before more charts load. */}
+                <div className="space-y-2">
+                    <p className="text-[9px] font-mono font-semibold text-neutral-400 dark:text-neutral-600 uppercase tracking-widest">
+                        Recent activity
+                    </p>
+
+                    {sessionsToShow.length > 0 ? (
+                        <div className="space-y-1.5">
+                            {sessionsToShow.map((session) => (
+                                <button
+                                    key={session.id}
+                                    type="button"
+                                    onClick={() => onResumeSession?.(session.id)}
+                                    className="w-full rounded-md border border-neutral-200/80 dark:border-neutral-800 px-3 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+                                >
+                                    <p className="text-[11px] font-mono font-semibold text-neutral-700 dark:text-neutral-300 truncate">
+                                        {session.title}
+                                    </p>
+                                    <div className="mt-1 flex items-center justify-between gap-2 text-[9px] font-mono uppercase tracking-widest text-neutral-400 dark:text-neutral-600">
+                                        <span className="inline-flex items-center gap-1">
+                                            <Clock3 className="h-3 w-3" />
+                                            {session.createdAtLabel}
+                                        </span>
+                                        <span>{session.status}</span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-[10px] font-mono text-neutral-400 dark:text-neutral-600 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-md px-3 py-2">
+                            Start your first mock interview to see activity here.
+                        </p>
                     )}
                 </div>
             </div>

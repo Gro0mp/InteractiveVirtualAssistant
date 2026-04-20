@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useMemo, useState} from 'react'
 import {useRouter} from 'next/navigation'
 import {motion} from 'framer-motion'
 import {DashboardLayout} from '../components/DashboardLayout'
@@ -42,7 +42,7 @@ function buildStatsFromSessionsFeedback(sessions: InterviewFeedbackResponse[]): 
         },
         {
             label: 'Avg Score',
-            value: Math.round(avgScore),
+            value: Math.round(avgScore) as number,
             tag: '/ 100',
             sub: 'vs last month',
         },
@@ -164,17 +164,65 @@ export function InterviewDashboardPage() {
         })
     }, [])
 
-
     const statsHistory = buildStatsFromSessionsFeedback(feedbackHistory)
     const scoreHistory = buildScoreHistoryFromSessionsFeedback(feedbackHistory)
     const skillsHistory = buildSkillsFromSessionsFeedback(feedbackHistory)
 
+    const sessionsSortedByNewest = useMemo(() => {
+        return [...sessions].sort((a, b) => {
+            const aTime = Date.parse(a.createdAt || '')
+            const bTime = Date.parse(b.createdAt || '')
+
+            if (Number.isNaN(aTime) && Number.isNaN(bTime)) return b.id - a.id
+            if (Number.isNaN(aTime)) return 1
+            if (Number.isNaN(bTime)) return -1
+            return bTime - aTime
+        })
+    }, [sessions])
+
+    // Only sessions that are not completed should be resumable from Quick Start.
+    const latestInProgressSession = sessionsSortedByNewest.find(
+        (session) => session.status !== 'COMPLETED'
+    )
+
+    const quickStartRecentSessions = sessionsSortedByNewest.slice(0, 3).map((session) => ({
+        id: session.id,
+        title: session.title || `Session #${session.id}`,
+        createdAtLabel: session.createdAt
+            ? new Date(session.createdAt).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})
+            : 'Unknown date',
+        status: session.status === 'COMPLETED' ? 'Completed' : 'In progress',
+    }))
 
     const handleOpenSession = (id: number) => router.push(`/interview/${id}`)
     const handleViewFeedback = (id: number) => router.push(`/interview/${id}/feedback`)
     const handleNewSession = () => router.push('/interview')
-    const handleDeleteSession = async (id: number) => {
-        await api.deleteInterviewSession(id)
+    const handleDeleteSession = async (sessionId: number) => {
+        // Optimistically remove from UI so the dashboard updates immediately.
+        setSessions(prev => prev.filter(session => session.id !== sessionId))
+        setFeedbackHistory(prev => prev.filter(feedback => feedback.sessionId !== sessionId))
+
+        try {
+            await api.deleteInterviewSession(sessionId)
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : ''
+            // If backend says not found, the session is already effectively gone.
+            if (msg.includes('SESSION_NOT_FOUND') || msg.includes('Session not found') || msg.includes('404')) {
+                return
+            }
+            console.error('Failed to delete session from dashboard:', err)
+            // Re-sync on unexpected failures.
+            try {
+                const [freshSessions, freshFeedback] = await Promise.all([
+                    api.getInterviewSessions(),
+                    api.getAllInterviewFeedback(),
+                ])
+                setSessions(freshSessions)
+                setFeedbackHistory(freshFeedback)
+            } catch (syncErr) {
+                console.error('Failed to refresh dashboard after delete error:', syncErr)
+            }
+        }
     }
 
     return (
@@ -245,7 +293,7 @@ export function InterviewDashboardPage() {
                         transition={{duration: 0.4, delay: 0.1}}
                         className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4"
                     >
-                        <InterviewScoreChart data={scoreHistory} averageScore={75}/>
+                        <InterviewScoreChart data={scoreHistory} averageScore={+statsHistory[1].value}/>
                         <InterviewSkillsBreakdown skills={skillsHistory}/>
                     </motion.div>
 
@@ -257,10 +305,11 @@ export function InterviewDashboardPage() {
                         className="grid grid-cols-1 md:grid-cols-2 gap-4"
                     >
                         <InterviewQuickStart
+                            lastSessionTitle={latestInProgressSession?.title}
+                            lastSessionId={latestInProgressSession?.id}
+                            recentSessions={quickStartRecentSessions}
                             onNewSession={handleNewSession}
                             onResumeSession={handleOpenSession}
-                            completedThisWeek={4}
-                            weeklyGoal={5}
                         />
                         <InterviewTipCard tips={TIPS}/>
                     </motion.div>

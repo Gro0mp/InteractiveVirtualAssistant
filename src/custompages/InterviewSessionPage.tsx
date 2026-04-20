@@ -101,7 +101,7 @@ export function InterviewSessionPage() {
                 ])
                 const session = sessions.find(s => s.id === sessionId)
                 if (session) {
-                    setSessionTitle(session.description || 'Mock Interview')
+                    setSessionTitle(session.title || 'Mock Interview')
                     // Only set isCompleted — do NOT set completedDuringSession here.
                     // This prevents the auto-redirect from firing when revisiting an
                     // already-completed session.
@@ -112,7 +112,7 @@ export function InterviewSessionPage() {
                     sessionId,
                     role: 'INTERVIEWER',
                     content: "Hello! I am IVA, your interactive virtual assistant. I will be conducting your mock interview today based on the job description you provided. Whenever you are ready, please say 'I am ready to start'.",
-                    createdAt: new Date().toISOString(),
+                    createdAt: '1970-01-01T00:00:00.000Z',
                 }
 
                 const mapped: InterviewMessageHistoryListResponse[] = history.map((m) => ({

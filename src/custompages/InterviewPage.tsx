@@ -78,9 +78,9 @@ export function InterviewPage() {
         router.push(`/interview/${sessionId}/feedback`)
     }
 
-    const handleDeleteSession = async (id: number) => {
+    const handleDeleteSession = async (sessionId: number) => {
         try {
-            await api.deleteInterviewSession(id)
+            await api.deleteInterviewSession(sessionId)
             await loadSessions()
         } catch (e) {
             console.error('Failed to delete session:', e)
@@ -97,6 +97,7 @@ export function InterviewPage() {
             // that document's chunks during the interview.
             const session = await api.createInterviewSession(
                 nextSetup.jobDescriptionText,
+                nextSetup.interviewLength ?? 'REGULAR',
                 resumeS3Key ?? undefined
             )
             router.push(`/interview/${session.id}`)

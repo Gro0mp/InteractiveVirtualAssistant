@@ -105,16 +105,20 @@ export function AssistantPage() {
         const unsubMessage = wsClient.onMessage((response) => {
             console.log('WS message received:', response.type);
 
-            if (response.type === 'CHUNK') {
-                // Buffer the token — flush will batch these into a single setState
-                chunkBufferRef.current += response.responseMessage ?? '';
-                scheduleFlush();
-            } else if (response.type === 'AUDIO') {
+            // Combine both CHUNK and AUDIO logic.
+            // If the payload has text, buffer it. If it has audio, queue it.
+            if (response.type === 'CHUNK' || response.type === 'AUDIO') {
+
+                if (response.responseMessage) {
+                    chunkBufferRef.current += response.responseMessage;
+                    scheduleFlush();
+                }
+
                 if (response.audioUrl) {
                     setNewAudioChunk({url: response.audioUrl, id: Date.now()});
                 }
+
             } else if (response.type === 'DONE') {
-                // Flush any remaining buffered text before marking done
                 if (flushTimerRef.current) {
                     clearTimeout(flushTimerRef.current);
                     flushChunkBuffer();

@@ -16,13 +16,13 @@ type Props = {
 export function InterviewSelectionPanel({sessions, isLoading, onOpen, onCreateNew, onDelete, onOpenFeedback}: Props) {
     const [query, setQuery] = useState('')
 
-    const getDescription = (s: InterviewSessionResponse) =>
-        s.description?.trim() ? s.description : 'Mock Interview'
+    const getTitle = (s: InterviewSessionResponse) =>
+        s.title?.trim() ? s.title : 'Mock Interview'
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase()
         if (!q) return sessions
-        return sessions.filter((s) => getDescription(s).toLowerCase().includes(q))
+        return sessions.filter((s) => getTitle(s).toLowerCase().includes(q))
     }, [sessions, query])
 
     return (
@@ -123,7 +123,7 @@ export function InterviewSelectionPanel({sessions, isLoading, onOpen, onCreateNe
                                                 </span>
                                                 <div
                                                     className="truncate text-[12px] font-mono font-semibold text-neutral-900 dark:text-white">
-                                                    {getDescription(s)}
+                                                    {getTitle(s)}
                                                 </div>
                                             </div>
                                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -135,7 +135,7 @@ export function InterviewSelectionPanel({sessions, isLoading, onOpen, onCreateNe
                                                 <span
                                                     className="text-neutral-300 dark:text-neutral-800 text-[10px]">·</span>
                                                 <span
-                                                    className="text-[10px] font-mono text-neutral-400 dark:text-neutral-600">{s.messages} msgs</span>
+                                                    className="text-[10px] font-mono text-neutral-400 dark:text-neutral-600">{s.questionsAnswered / s.totalQuestions} msgs</span>
                                             </div>
                                         </button>
 
