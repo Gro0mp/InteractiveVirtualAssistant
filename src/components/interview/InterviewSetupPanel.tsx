@@ -4,6 +4,26 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, FileText, Upload, X } from 'lucide-react'
 
+let pdfjsPromise: Promise<any> | null = null
+
+async function getPdfJs() {
+    if (typeof window === 'undefined') {
+        throw new Error('PDF extraction is only available in the browser')
+    }
+
+    if (!pdfjsPromise) {
+        pdfjsPromise = import('pdfjs-dist/legacy/build/pdf.mjs').then((pdfjs) => {
+            const workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
+            if (pdfjs.GlobalWorkerOptions.workerSrc !== workerSrc) {
+                pdfjs.GlobalWorkerOptions.workerSrc = workerSrc
+            }
+            return pdfjs
+        })
+    }
+
+    return pdfjsPromise
+}
+
 const MAX_PDF_SIZE_MB = 5
 const MAX_PDF_SIZE_BYTES = MAX_PDF_SIZE_MB * 1024 * 1024
 
@@ -66,9 +86,7 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
 
         setIsExtractingPdf(true)
         try {
-            // Dynamic import keeps pdfjs out of the SSR bundle (avoids DOMMatrix crash)
-            const { pdfjs } = await import('react-pdf')
-            pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+            const pdfjs = await getPdfJs()
 
             const buffer = await selected.arrayBuffer()
             const loadingTask = pdfjs.getDocument({ data: buffer })
@@ -79,7 +97,7 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
                 const page = await pdf.getPage(pageIndex)
                 const content = await page.getTextContent()
                 const pageText = content.items
-                    .map((item) => ('str' in item ? item.str : ''))
+                    .map((item: any) => ('str' in item ? item.str : ''))
                     .join(' ')
                     .trim()
                 if (pageText) extracted += `${pageText}\n\n`
