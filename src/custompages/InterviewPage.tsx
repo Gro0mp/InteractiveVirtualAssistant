@@ -147,9 +147,9 @@ export function InterviewPage() {
             return (
                 <InterviewSetupPanel
                     value={setup}
-                    onChange={setSetup}
-                    onStart={handleStart}
-                    onBack={handleBack}
+                    onChangeAction={setSetup}
+                    onStartAction={handleStart}
+                    onBackAction={handleBack}
                     isStarting={isSending}
                 />
             )
