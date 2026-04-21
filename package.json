@@ -6,10 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "tsc && next build",
-    "start": "next start",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "start": "next start"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.18",
@@ -22,8 +19,7 @@
     "typescript": "~5.9.3"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "^4.20260420.1",
-    "@opennextjs/cloudflare": "^1.19.2",
+    "@react-pdf/renderer": "^4.3.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@stomp/stompjs": "^7.3.0",
@@ -35,14 +31,15 @@
     "framer-motion": "^12.34.0",
     "lucide-react": "^0.563.0",
     "mammoth": "^1.11.0",
+    "mapbox-gl": "^3.20.0",
     "next": "^16.2.1",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^5.4.296",
+    "pdf-parse": "^2.4.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-pdf": "^10.3.0",
     "recharts": "^3.8.1",
     "sockjs": "^0.3.24",
-    "three": "^0.182.0",
-    "wrangler": "^4.84.0"
+    "three": "^0.182.0"
   }
 }

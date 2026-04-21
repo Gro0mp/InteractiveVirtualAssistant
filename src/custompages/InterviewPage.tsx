@@ -3,14 +3,7 @@
 import React, {Suspense, useEffect, useState} from 'react'
 import {useParams, useRouter} from 'next/navigation'
 import {DashboardLayout} from '../components/DashboardLayout'
-
-// The 3D interview assistant scene is a bit heavy, so we load it dynamically without SSR
-import dynamic from 'next/dynamic'
-const InterviewScene = dynamic(
-    () => import('../components/interview/InterviewScene').then(m => m.InterviewScene),
-    { ssr: false }
-)
-
+import {InterviewScene} from '../components/interview/InterviewScene'
 import {InterviewSetupPanel} from '../components/interview/InterviewSetupPanel'
 import {InterviewSelectionPanel} from '../components/interview/InterviewSelectionPanel'
 import {ResumeUploader} from '../components/interview/ResumeUploader'
@@ -154,9 +147,9 @@ export function InterviewPage() {
             return (
                 <InterviewSetupPanel
                     value={setup}
-                    onChangeAction={setSetup}
-                    onStartAction={handleStart}
-                    onBackAction={handleBack}
+                    onChange={setSetup}
+                    onStart={handleStart}
+                    onBack={handleBack}
                     isStarting={isSending}
                 />
             )

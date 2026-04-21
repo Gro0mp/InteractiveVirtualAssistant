@@ -11,7 +11,7 @@ type Props = {
 
 function Robot2({ animationName = 'Sitting' }: { animationName?: string }) {
     const group = useRef<THREE.Group>(null)
-    const { scene, animations } = useGLTF('/models/robot2.glb')
+    const { scene, animations } = useGLTF('/models/robot3.glb')
     const { actions, names } = useAnimations(animations, group)
 
     useEffect(() => {

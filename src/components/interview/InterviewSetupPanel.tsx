@@ -1,28 +1,6 @@
-'use client'
-
 import React, { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, FileText, Upload, X } from 'lucide-react'
-
-let pdfjsPromise: Promise<any> | null = null
-
-async function getPdfJs() {
-    if (typeof window === 'undefined') {
-        throw new Error('PDF extraction is only available in the browser')
-    }
-
-    if (!pdfjsPromise) {
-        pdfjsPromise = import('pdfjs-dist/legacy/build/pdf.mjs').then((pdfjs) => {
-            const workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
-            if (pdfjs.GlobalWorkerOptions.workerSrc !== workerSrc) {
-                pdfjs.GlobalWorkerOptions.workerSrc = workerSrc
-            }
-            return pdfjs
-        })
-    }
-
-    return pdfjsPromise
-}
 
 const MAX_PDF_SIZE_MB = 5
 const MAX_PDF_SIZE_BYTES = MAX_PDF_SIZE_MB * 1024 * 1024
@@ -36,13 +14,13 @@ export type InterviewSetupValue = {
 
 type Props = {
     value: InterviewSetupValue | null
-    onChangeAction: (value: InterviewSetupValue | null) => void
-    onStartAction: (value: InterviewSetupValue) => void
+    onChange: (value: InterviewSetupValue | null) => void
+    onStart: (value: InterviewSetupValue) => void
     isStarting?: boolean
-    onBackAction?: () => void
+    onBack?: () => void
 }
 
-export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isStarting, onBackAction }: Props) {
+export function InterviewSetupPanel({ value, onChange, onStart, isStarting, onBack }: Props) {
     const [isDragging, setIsDragging] = useState(false)
     const [pasteText, setPasteText] = useState('')
     const [file, setFile] = useState<File | null>(null)
@@ -72,21 +50,23 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
             selected.type === 'application/pdf' || selected.name.toLowerCase().endsWith('.pdf')
         if (!isPdf) {
             setFile(null)
-            onChangeAction(null)
+            onChange(null)
             setUploadError('Only PDF files are supported for job descriptions.')
             return
         }
 
         if (selected.size > MAX_PDF_SIZE_BYTES) {
             setFile(null)
-            onChangeAction(null)
+            onChange(null)
             setUploadError(`File is too large. Maximum size is ${MAX_PDF_SIZE_MB}MB.`)
             return
         }
 
         setIsExtractingPdf(true)
         try {
-            const pdfjs = await getPdfJs()
+            // Dynamic import keeps pdfjs out of the SSR bundle (avoids DOMMatrix crash)
+            const { pdfjs } = await import('react-pdf')
+            pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
             const buffer = await selected.arrayBuffer()
             const loadingTask = pdfjs.getDocument({ data: buffer })
@@ -97,7 +77,7 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
                 const page = await pdf.getPage(pageIndex)
                 const content = await page.getTextContent()
                 const pageText = content.items
-                    .map((item: any) => ('str' in item ? item.str : ''))
+                    .map((item) => ('str' in item ? item.str : ''))
                     .join(' ')
                     .trim()
                 if (pageText) extracted += `${pageText}\n\n`
@@ -106,7 +86,7 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
             const text = extracted.trim()
             if (!text) {
                 setFile(null)
-                onChangeAction(null)
+                onChange(null)
                 setUploadError('Could not extract text from this PDF. Try another file.')
                 return
             }
@@ -119,11 +99,11 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
                 source: 'file',
                 fileName: selected.name,
             }
-            onChangeAction(next)
+            onChange(next)
         } catch (e) {
             console.error('Failed to read file:', e)
             setFile(null)
-            onChangeAction(null)
+            onChange(null)
             setUploadError('Failed to read PDF. Please try a different file.')
         } finally {
             setIsExtractingPdf(false)
@@ -138,13 +118,13 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
     const clearUploadedDescription = () => {
         setFile(null)
         setUploadError(null)
-        if (value?.source === 'file') onChangeAction(null)
+        if (value?.source === 'file') onChange(null)
     }
 
     const handleLengthChange = (length: InterviewSetupValue['interviewLength']) => {
         setInterviewLength(length)
         if (!value?.jobDescriptionText?.trim()) return
-        onChangeAction({ ...value, interviewLength: length })
+        onChange({ ...value, interviewLength: length })
     }
 
     return (
@@ -188,7 +168,7 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
                                 type="button"
                                 onClick={() => {
                                     setPasteText('')
-                                    if (value?.source === 'paste') onChangeAction(null)
+                                    if (value?.source === 'paste') onChange(null)
                                 }}
                                 className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
                                 aria-label="Clear pasted text"
@@ -205,7 +185,7 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
                             const nextText = e.target.value
                             setPasteText(nextText)
                             const trimmed = nextText.trim()
-                            onChangeAction(trimmed ? {
+                            onChange(trimmed ? {
                                 jobDescriptionText: trimmed,
                                 interviewLength,
                                 source: 'paste',
@@ -378,10 +358,10 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
 
             {/* Footer */}
             <div className="shrink-0 border-t border-neutral-200 dark:border-neutral-800 px-5 py-4 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-between gap-3">
-                {onBackAction ? (
+                {onBack ? (
                     <button
                         type="button"
-                        onClick={onBackAction}
+                        onClick={onBack}
                         className="inline-flex items-center gap-1 text-[10px] font-mono text-neutral-400 dark:text-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors uppercase tracking-wider"
                     >
                         <ChevronLeft className="h-3 w-3" />
@@ -402,7 +382,7 @@ export function InterviewSetupPanel({ value, onChangeAction, onStartAction, isSt
                     <button
                         type="button"
                         disabled={!canStart || Boolean(isStarting)}
-                        onClick={() => { if (!value) return; onStartAction(value) }}
+                        onClick={() => { if (!value) return; onStart(value) }}
                         className={[
                             'inline-flex items-center gap-2 px-4 py-2 text-[10px] font-mono font-semibold uppercase tracking-widest border transition-colors duration-150',
                             canStart && !isStarting
