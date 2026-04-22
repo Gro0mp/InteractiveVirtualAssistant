@@ -21,7 +21,7 @@ export function Button({
                            ...props
                        }: ButtonProps) {
     const base =
-        'inline-flex items-center justify-center font-medium tracking-tight transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black focus-visible:ring-offset-white disabled:opacity-40 disabled:pointer-events-none select-none rounded-sm';
+        'inline-flex items-center justify-center font-mono font-semibold uppercase tracking-widest transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black focus-visible:ring-offset-white disabled:opacity-40 disabled:pointer-events-none select-none';
 
     const variants = {
         primary:
@@ -36,9 +36,9 @@ export function Button({
     };
 
     const sizes = {
-        sm: 'h-8 px-3.5 text-xs gap-1.5',
-        md: 'h-9 px-4 text-sm gap-2',
-        lg: 'h-11 px-6 text-sm gap-2',
+        sm: 'h-8 px-3.5 text-[9px] gap-1.5',
+        md: 'h-9 px-4 text-[10px] gap-2',
+        lg: 'h-11 px-6 text-[10px] gap-2',
     };
 
     return (

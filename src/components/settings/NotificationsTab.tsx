@@ -4,6 +4,8 @@ import { Button } from '../ui/Button'
 import { SettingsSection } from './SettingsSection'
 import { SettingsToggle } from './SettingsToggle'
 import { SettingsRow } from './SettingsRow'
+import { api } from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
 
 type Channel = 'email' | 'push' | 'slack'
 
@@ -66,10 +68,16 @@ const CHANNELS: { key: Channel; label: string }[] = [
 ]
 
 export function NotificationsTab() {
-    const [notifs, setNotifs] = useState(INITIAL_NOTIFS)
-    const [digestMode, setDigestMode] = useState(false)
-    const [quietHours, setQuietHours] = useState(true)
-    const [saved, setSaved] = useState(false)
+    const { user, refreshUser } = useAuth()
+
+    const [notifs, setNotifs]           = useState(INITIAL_NOTIFS)
+    const [emailEnabled, setEmailEnabled]           = useState(user?.emailNotifications ?? true)
+    const [digestMode, setDigestMode]               = useState(user?.weeklyDigest ?? true)
+    const [interviewReminders, setInterviewReminders] = useState(user?.interviewReminders ?? true)
+    const [quietHours, setQuietHours]               = useState(true)
+    const [saved, setSaved]   = useState(false)
+    const [saving, setSaving] = useState(false)
+    const [error, setError]   = useState<string | null>(null)
 
     const toggleChannel = (id: string, channel: Channel) => {
         setNotifs(prev => prev.map(n =>
@@ -79,9 +87,23 @@ export function NotificationsTab() {
         ))
     }
 
-    const handleSave = () => {
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2500)
+    const handleSave = async () => {
+        setError(null)
+        setSaving(true)
+        try {
+            await api.updatePreferences({
+                emailNotifications: emailEnabled,
+                weeklyDigest:       digestMode,
+                interviewReminders: interviewReminders,
+            })
+            await refreshUser()
+            setSaved(true)
+            setTimeout(() => setSaved(false), 2500)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to save preferences.')
+        } finally {
+            setSaving(false)
+        }
     }
 
     return (

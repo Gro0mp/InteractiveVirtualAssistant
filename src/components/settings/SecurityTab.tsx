@@ -39,7 +39,7 @@ export function SecurityTab() {
         setDeleteAccountError(null)
 
         const confirmed = window.confirm(
-            'Delete your account permanently? This will remove your profile and all associated data.'
+            'Delete your account permanently? If you have an active subscription, it will be canceled immediately before your account is removed. This action cannot be undone.'
         )
         if (!confirmed) return
 
@@ -50,6 +50,10 @@ export function SecurityTab() {
             router.replace('/login?accountDeleted=1')
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to delete account. Please try again.'
+            if (message === 'SUBSCRIPTION_CANCEL_FAILED') {
+                setDeleteAccountError('We could not cancel your active subscription, so your account was not deleted. Please try again or contact support.')
+                return
+            }
             setDeleteAccountError(message)
         } finally {
             setIsDeletingAccount(false)
@@ -219,7 +223,7 @@ export function SecurityTab() {
             <SettingsSection tag="05" title="Danger Zone" danger>
                 <SettingsRow
                     label="Delete account"
-                    description="Permanently delete your account and all data. This cannot be undone."
+                    description="Permanently delete your account and all data. Active subscriptions are canceled immediately before deletion."
                 >
                     <Button
                         variant="outline"

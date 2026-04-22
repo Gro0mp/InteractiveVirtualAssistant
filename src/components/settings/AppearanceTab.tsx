@@ -5,8 +5,8 @@ import { Button } from '../ui/Button'
 import { SettingsSection } from './SettingsSection'
 import { SettingsToggle } from './SettingsToggle'
 import { SettingsRow } from './SettingsRow'
+import { type ThemeMode, useTheme } from '../../context/ThemeContext'
 
-type Theme = 'light' | 'dark' | 'system'
 type Density = 'compact' | 'comfortable' | 'spacious'
 type FontSize = 'sm' | 'md' | 'lg'
 type AccentColor = 'blue' | 'indigo' | 'emerald' | 'amber' | 'rose'
@@ -19,14 +19,15 @@ const ACCENT_COLORS: { key: AccentColor; hex: string; label: string }[] = [
     { key: 'rose',   hex: '#e11d48', label: 'Rose' },
 ]
 
-const THEME_OPTIONS: { key: Theme; label: string; description: string }[] = [
+const THEME_OPTIONS: { key: ThemeMode; label: string; description: string }[] = [
     { key: 'light',  label: 'Light',  description: 'Always use light mode' },
     { key: 'dark',   label: 'Dark',   description: 'Always use dark mode' },
     { key: 'system', label: 'System', description: 'Match your OS setting' },
 ]
 
 export function AppearanceTab() {
-    const [theme, setTheme] = useState<Theme>('dark')
+    const { themeMode, setThemeMode } = useTheme()
+
     const [density, setDensity] = useState<Density>('comfortable')
     const [fontSize, setFontSize] = useState<FontSize>('md')
     const [accent, setAccent] = useState<AccentColor>('blue')
@@ -35,6 +36,8 @@ export function AppearanceTab() {
     const [sidebarLabels, setSidebarLabels] = useState(true)
     const [saved, setSaved] = useState(false)
 
+    // Theme selection is applied immediately via ThemeContext (persisted in localStorage).
+    // Other layout/accessibility options show a save confirmation for UX feedback.
     const handleSave = () => {
         setSaved(true)
         setTimeout(() => setSaved(false), 2500)
@@ -51,12 +54,12 @@ export function AppearanceTab() {
             <SettingsSection tag="01" title="Theme" accentCorner="tl">
                 <div className="grid grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-800">
                     {THEME_OPTIONS.map((opt) => {
-                        const isActive = theme === opt.key
+                        const isActive = themeMode === opt.key
                         return (
                             <button
                                 key={opt.key}
                                 type="button"
-                                onClick={() => setTheme(opt.key)}
+                                onClick={() => setThemeMode(opt.key)}
                                 className={[
                                     'relative p-4 text-left transition-colors duration-150',
                                     isActive
@@ -205,7 +208,7 @@ export function AppearanceTab() {
             {/* Save */}
             <div className="flex items-center justify-between px-5 py-3 border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
                 <p className="text-[10px] font-mono text-neutral-400 dark:text-neutral-600 uppercase tracking-widest">
-                    Appearance saved per device
+                    Theme applies immediately — saved to this device
                 </p>
                 <Button variant="secondary" size="md" onClick={handleSave}>
                     {saved ? 'Saved!' : 'Save appearance'}

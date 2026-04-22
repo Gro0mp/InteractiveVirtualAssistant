@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { api, type User } from '../services/api'
 import { wsClient } from '../services/ws'
 
@@ -53,31 +53,30 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
         return () => { cancelled = true }
     }, [])
 
-    const login = (user: User) => {
-        setUser(user)
-        localStorage.setItem('user', JSON.stringify(user))
+    const login = useCallback((newUser: User) => {
+        setUser(newUser)
+        localStorage.setItem('user', JSON.stringify(newUser))
         setIsLoading(false)
-    }
+    }, [])
 
-    const logout = () => {
+    const logout = useCallback(() => {
         setUser(null)
         localStorage.removeItem('user')
         wsClient.disconnect()
         // Call backend to invalidate the JSESSIONID session cookie.
         // Spring Security's logout endpoint is /logout (not /api/v1/logout).
         api.logout().catch(err => console.error('Server logout failed:', err))
-    }
+    }, [])
 
-    const refreshUser = async () => {
-        setIsLoading(true)
+    const refreshUser = useCallback(async () => {
         try {
             const me = await api.getCurrentUser()
             setUser(me)
             localStorage.setItem('user', JSON.stringify(me))
-        } finally {
-
+        } catch {
+            // silently ignore — don't log the user out on a background refresh failure
         }
-    }
+    }, [])
 
     return (
         <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, refreshUser }}>

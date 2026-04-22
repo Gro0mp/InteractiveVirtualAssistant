@@ -1,12 +1,19 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Minus, CreditCard, Download, AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Check, Minus } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { SettingsSection } from './SettingsSection'
-import { SettingsRow } from './SettingsRow'
-import {useAuth} from "../../context/AuthContext.tsx";
+import type { CheckoutPlan } from '../payment/ProductDisplay'
+import { useAuth } from '../../context/AuthContext'
+import { api } from '../../services/api'
 
 type Plan = 'FREE' | 'BASIC' | 'PROFESSIONAL'
+const STRIPE_SESSION_STORAGE_KEY = 'iva_stripe_session_id'
+
+const PLAN_TO_CHECKOUT: Partial<Record<Plan, CheckoutPlan>> = {
+    BASIC: 'basic',
+    PROFESSIONAL: 'pro',
+}
 
 const PLANS = [
     {
@@ -36,18 +43,109 @@ const PLANS = [
     },
 ]
 
-// const INVOICES = [
-//     // { id: 'INV-2026-03', date: 'Mar 1, 2026', amount: '$19.00', status: 'paid' },
-//     // { id: 'INV-2026-02', date: 'Feb 1, 2026', amount: '$19.00', status: 'paid' },
-//     // { id: 'INV-2026-01', date: 'Jan 1, 2026', amount: '$19.00', status: 'paid' },
-// ]
+type StatusMeta = { label: string; color: string; dotColor: string; banner?: string; bannerStyle?: string }
+
+function resolveStatusMeta(status: string | null | undefined): StatusMeta {
+    switch (status) {
+        case 'trialing':
+            return { label: 'Trialing', color: 'text-blue-600 dark:text-blue-400', dotColor: 'bg-blue-500' }
+        case 'past_due':
+            return {
+                label: 'Past due',
+                color: 'text-amber-600 dark:text-amber-400',
+                dotColor: 'bg-amber-500',
+                banner: 'Your last payment failed. Please update your payment method to avoid losing access.',
+                bannerStyle: 'border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400',
+            }
+        case 'unpaid':
+            return {
+                label: 'Unpaid',
+                color: 'text-red-600 dark:text-red-400',
+                dotColor: 'bg-red-500',
+                banner: 'Your subscription is unpaid and access has been restricted. Update your payment method to restore access.',
+                bannerStyle: 'border-red-200 dark:border-red-900/60 bg-red-50/60 dark:bg-red-950/20 text-red-600 dark:text-red-400',
+            }
+        case 'canceled':
+            return {
+                label: 'Canceled',
+                color: 'text-neutral-500 dark:text-neutral-400',
+                dotColor: 'bg-neutral-400',
+            }
+        case 'active':
+        default:
+            return { label: 'Active', color: 'text-emerald-600 dark:text-emerald-400', dotColor: 'bg-emerald-500' }
+    }
+}
 
 type Props = {
     currentPlan?: Plan
 }
 
 export function BillingTab({ currentPlan = 'FREE' }: Props) {
+    const { user, refreshUser } = useAuth()
     const [plan, setPlan] = useState<Plan>(currentPlan)
+    const [message, setMessage] = useState('')
+    const [loadingPlan, setLoadingPlan] = useState<CheckoutPlan | null>(null)
+    const [portalLoading, setPortalLoading] = useState(false)
+
+    useEffect(() => {
+        setPlan(currentPlan)
+    }, [currentPlan])
+
+    useEffect(() => {
+        void refreshUser()
+
+        const query = new URLSearchParams(window.location.search)
+        const sid = query.get('session_id')
+        if (sid) window.localStorage.setItem(STRIPE_SESSION_STORAGE_KEY, sid)
+
+        if (query.get('success')) {
+            setMessage('Payment successful. Your plan is syncing now...')
+            return
+        }
+        if (query.get('canceled')) {
+            setMessage('Checkout canceled — you can try again anytime.')
+        }
+    }, [refreshUser])
+
+    const startCheckout = async (targetPlan: Plan) => {
+        const checkoutPlan = PLAN_TO_CHECKOUT[targetPlan]
+        if (!checkoutPlan) {
+            setMessage('Use Manage billing to downgrade or cancel your current subscription.')
+            return
+        }
+
+        setMessage('')
+        setLoadingPlan(checkoutPlan)
+
+        try {
+            const stripeUrl = await api.createCheckoutSession(checkoutPlan)
+            window.location.href = stripeUrl
+        } catch (error: any) {
+            setMessage(error.message || 'Failed to initiate checkout. Please try again.')
+            setLoadingPlan(null)
+        }
+    }
+
+    const openBillingPortal = async () => {
+        setPortalLoading(true)
+        const query = new URLSearchParams(window.location.search)
+        const sessionId = query.get('session_id') ?? window.localStorage.getItem(STRIPE_SESSION_STORAGE_KEY) ?? ''
+
+        setMessage('')
+
+        try {
+            const stripeUrl = await api.createPortalSession(sessionId)
+            window.location.href = stripeUrl
+        } catch (error: any) {
+            setMessage(error.message || 'Failed to open billing portal. Please try again.')
+            setPortalLoading(false)
+        }
+    }
+
+    const subStatus  = user?.stripeSubscriptionStatus
+    const statusMeta = resolveStatusMeta(subStatus)
+    const currentPlanMeta = PLANS.find(p => p.id === plan)
 
     return (
         <motion.div
@@ -56,34 +154,53 @@ export function BillingTab({ currentPlan = 'FREE' }: Props) {
             transition={{ duration: 0.3 }}
             className="space-y-4"
         >
-            {/* Current plan summary */}
+            {statusMeta.banner && (
+                <div className={`flex items-start gap-2 px-4 py-3 border ${statusMeta.bannerStyle}`}>
+                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-mono leading-relaxed">{statusMeta.banner}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={openBillingPortal} isLoading={portalLoading}>
+                        Update payment
+                    </Button>
+                </div>
+            )}
+
             <SettingsSection tag="01" title="Current Plan" accentCorner="tl">
                 <div className="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-neutral-100 dark:border-neutral-800">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-lg font-mono font-semibold text-neutral-900 dark:text-white">
-                                {PLANS.find(p => p.id === plan)?.name}
+                                {currentPlanMeta?.name}
                             </span>
-                            <span className="inline-flex items-center gap-1 border border-emerald-200 dark:border-emerald-900 px-1.5 py-0.5">
-                                <span className="w-1 h-1 rounded-full bg-emerald-500" />
-                                <span className="text-[8px] font-mono font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Active</span>
+                            <span className="inline-flex items-center gap-1 border border-current/20 px-1.5 py-0.5">
+                                <span className={`w-1 h-1 rounded-full ${statusMeta.dotColor}`} />
+                                <span className={`text-[8px] font-mono font-medium uppercase tracking-widest ${statusMeta.color}`}>
+                                    {statusMeta.label}
+                                </span>
                             </span>
                         </div>
                         <p className="text-[10px] font-mono text-neutral-400 dark:text-neutral-600">
-                            Next billing date: Apr 1, 2026 · {PLANS.find(p => p.id === plan)?.price}/mo
+                            Next billing date: Apr 1, 2026 · {currentPlanMeta?.price}/mo
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm">Cancel plan</Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={openBillingPortal}
+                            isLoading={portalLoading}
+                        >
+                            Manage billing
+                        </Button>
                     </div>
                 </div>
 
-                {/* Usage meters */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
                         { label: 'Interviews used', used: 18, limit: plan === 'FREE' ? 5 : null },
-                        { label: 'Resume reviews', used: 4, limit: plan === 'FREE' ? 1 : null },
-                        { label: 'AI sessions', used: 31, limit: null },
+                        { label: 'Resume reviews',  used: 4,  limit: plan === 'FREE' ? 1 : null },
+                        { label: 'AI sessions',     used: 31, limit: null },
                     ].map((meter) => {
                         const pct = meter.limit ? Math.min(100, Math.round((meter.used / meter.limit) * 100)) : null
                         const overLimit = pct !== null && pct >= 100
@@ -114,7 +231,6 @@ export function BillingTab({ currentPlan = 'FREE' }: Props) {
                 </div>
             </SettingsSection>
 
-            {/* Plan picker */}
             <SettingsSection tag="02" title="Change Plan" description="Upgrade or downgrade at any time" accentCorner="tr">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-neutral-200 dark:bg-neutral-800">
                     {PLANS.map((p) => {
@@ -160,8 +276,15 @@ export function BillingTab({ currentPlan = 'FREE' }: Props) {
                                     variant={isCurrent ? 'primary' : 'outline'}
                                     size="sm"
                                     className="w-full"
-                                    disabled={isCurrent}
-                                    onClick={() => setPlan(p.id)}
+                                    disabled={isCurrent || Boolean(loadingPlan)}
+                                    isLoading={loadingPlan === PLAN_TO_CHECKOUT[p.id]}
+                                    onClick={() => {
+                                        if (p.id === 'FREE') {
+                                            openBillingPortal()
+                                            return
+                                        }
+                                        startCheckout(p.id)
+                                    }}
                                 >
                                     {isCurrent ? 'Current plan' : p.id === 'FREE' ? 'Downgrade' : 'Upgrade'}
                                 </Button>
@@ -171,50 +294,11 @@ export function BillingTab({ currentPlan = 'FREE' }: Props) {
                 </div>
             </SettingsSection>
 
-            {/* Payment method */}
-            {/*<SettingsSection tag="03" title="Payment Method" accentCorner="tl">*/}
-            {/*    <SettingsRow*/}
-            {/*        label="Card on file"*/}
-            {/*        description="Used for all subscription charges"*/}
-            {/*    >*/}
-            {/*        <div className="flex items-center gap-3">*/}
-            {/*            <div className="flex items-center gap-2 border border-neutral-200 dark:border-neutral-800 px-3 py-1.5">*/}
-            {/*                <CreditCard className="h-3.5 w-3.5 text-neutral-400" />*/}
-            {/*                <span className="text-[11px] font-mono text-neutral-700 dark:text-neutral-300">•••• 4242</span>*/}
-            {/*                <span className="text-[9px] font-mono text-neutral-400 dark:text-neutral-600">Exp 12/27</span>*/}
-            {/*            </div>*/}
-            {/*            <Button variant="ghost" size="sm">Update</Button>*/}
-            {/*        </div>*/}
-            {/*    </SettingsRow>*/}
-            {/*</SettingsSection>*/}
-
-            {/* Invoice history */}
-            <SettingsSection tag="04" title="Invoice History" accentCorner="tl">
-                <div className="divide-y divide-neutral-100 dark:divide-neutral-800/60">
-                    {/*{INVOICES.map((inv) => (*/}
-                    {/*    <div key={inv.id} className="flex items-center justify-between py-3">*/}
-                    {/*        <div className="flex items-center gap-4">*/}
-                    {/*            <span className="text-[10px] font-mono text-neutral-400 dark:text-neutral-600">{inv.id}</span>*/}
-                    {/*            <span className="text-[11px] font-mono text-neutral-700 dark:text-neutral-300">{inv.date}</span>*/}
-                    {/*        </div>*/}
-                    {/*        <div className="flex items-center gap-4">*/}
-                    {/*            <span className="text-[11px] font-mono font-semibold text-neutral-900 dark:text-white">{inv.amount}</span>*/}
-                    {/*            <span className="inline-flex items-center gap-1 border border-emerald-200 dark:border-emerald-900 px-1.5 py-0.5">*/}
-                    {/*                <span className="w-1 h-1 rounded-full bg-emerald-500" />*/}
-                    {/*                <span className="text-[8px] font-mono text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">{inv.status}</span>*/}
-                    {/*            </span>*/}
-                    {/*            <button*/}
-                    {/*                type="button"*/}
-                    {/*                className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"*/}
-                    {/*                aria-label={`Download ${inv.id}`}*/}
-                    {/*            >*/}
-                    {/*                <Download className="h-3.5 w-3.5" />*/}
-                    {/*            </button>*/}
-                    {/*        </div>*/}
-                    {/*    </div>*/}
-                    {/*))}*/}
+            {message && (
+                <div className="px-4 py-2 border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                    <p className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">{message}</p>
                 </div>
-            </SettingsSection>
+            )}
         </motion.div>
     )
 }

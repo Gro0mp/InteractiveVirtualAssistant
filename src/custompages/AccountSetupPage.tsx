@@ -30,7 +30,7 @@ const DEFAULT_STATE: SetupState = {
 export function AccountSetupPage() {
     const router = useRouter()
     const {user, isLoading, refreshUser} = useAuth()
-    const {setTheme} = useTheme()
+    const {setThemeMode} = useTheme()
 
     const [step, setStep] = useState(1)
     const [state, setState] = useState<SetupState>(DEFAULT_STATE)
@@ -46,16 +46,8 @@ export function AccountSetupPage() {
     }, [user, isLoading, router])
 
     useEffect(() => {
-        const selected = state.preferences.theme
-        if (selected === 'light' || selected === 'dark') {
-            setTheme(selected)
-            return
-        }
-        if (typeof window !== 'undefined') {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-            setTheme(prefersDark ? 'dark' : 'light')
-        }
-    }, [state.preferences.theme, setTheme])
+        setThemeMode(state.preferences.theme)
+    }, [state.preferences.theme, setThemeMode])
 
     const handleNext = async () => {
         if (step < 4) {
@@ -74,7 +66,6 @@ export function AccountSetupPage() {
                 company: state.profile.company,
                 experienceLevel: state.goals.experienceLevel ?? '',
                 goals: state.goals.goals.join(','),
-                theme: state.preferences.theme,
                 emailNotifications: state.preferences.emailNotifications,
                 weeklyDigest: state.preferences.weeklyDigest,
                 interviewReminders: state.preferences.interviewReminders,

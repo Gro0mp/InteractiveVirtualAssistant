@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSearchParams } from 'next/navigation'
 import {
     User,
     CreditCard,
@@ -36,14 +37,25 @@ const TABS: {
 ]
 
 export function SettingsPage() {
-    const [activeTab, setActiveTab] = useState<TabId>('profile')
+    const searchParams = useSearchParams()
+    const initialTab = searchParams.get('tab')
+    const [activeTab, setActiveTab] = useState<TabId>(
+        initialTab === 'billing' ||
+        initialTab === 'profile' ||
+        initialTab === 'security' ||
+        initialTab === 'integrations' ||
+        initialTab === 'notifications' ||
+        initialTab === 'appearance'
+            ? initialTab
+            : 'profile'
+    )
     const { user } = useAuth()
 
     const activeTabMeta = TABS.find(t => t.id === activeTab)!
 
     const renderTab = () => {
         switch (activeTab) {
-            case 'profile':       return <ProfileTab user={{ username: user?.username ?? '', email: user?.email ?? '' }} />
+            case 'profile':       return <ProfileTab />
             case 'billing':       return <BillingTab currentPlan={user?.plan} />
             case 'security':      return <SecurityTab />
             case 'integrations':  return <IntegrationsTab />

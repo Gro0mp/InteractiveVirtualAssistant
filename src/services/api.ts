@@ -33,6 +33,45 @@ export interface User {
     avatar_url?: string
     last_login?: string
     setUpComplete: boolean
+    stripeSubscriptionStatus?: string | null
+
+    // Profile fields (set during account-setup / editable in settings)
+    firstName?: string
+    lastName?: string
+    jobTitle?: string
+    company?: string
+    location?: string
+    goals?: string           // comma-separated goal keys
+    experienceLevel?: string // "JUNIOR" | "MID" | "SENIOR" | "LEAD"
+
+    emailNotifications?: boolean
+    weeklyDigest?: boolean
+    interviewReminders?: boolean
+}
+
+/**
+ * Used by the unified /update-credentials endpoint.
+ * Send only the field(s) that changed — backend ignores nulls.
+ */
+export interface UpdateCredentialsRequest {
+    username?: string
+    email?: string
+}
+
+export interface UpdateProfileRequest {
+    firstName?: string
+    lastName?: string
+    jobTitle?: string
+    company?: string
+    location?: string
+    experienceLevel?: string
+    goals?: string
+}
+
+export interface UpdatePreferencesRequest {
+    emailNotifications?: boolean
+    weeklyDigest?: boolean
+    interviewReminders?: boolean
 }
 
 export interface AccountSetupRequest {
@@ -42,13 +81,10 @@ export interface AccountSetupRequest {
     company: string
     experienceLevel: string        // "JUNIOR" | "MID" | "SENIOR" | "LEAD"
     goals: string                  // comma-separated, e.g. "interview_prep,resume_review"
-    theme: string                  // "light" | "dark" | "system"
     emailNotifications: boolean
     weeklyDigest: boolean
     interviewReminders: boolean
 }
-
-export type AuthResponse = User & { message?: string }
 
 export interface LoginRequest {
     email: string;
@@ -160,7 +196,7 @@ async function fetchWithTimeout(
 
 class ApiService {
 
-    async login(credentials: LoginRequest): Promise<AuthResponse> {
+    async login(credentials: LoginRequest): Promise<User> {
         const res = await fetch(`${API_BASE}/users/login`, {
             method: 'POST',
             headers: csrfHeaders({'Content-Type': 'application/json'}),
@@ -174,7 +210,7 @@ class ApiService {
         return res.json()
     }
 
-    async signUp(userData: SignUpRequest): Promise<AuthResponse> {
+    async signUp(userData: SignUpRequest): Promise<User> {
         const res = await fetch(`${API_BASE}/users/create-user`, {
             method: 'POST',
             headers: csrfHeaders({'Content-Type': 'application/json'}),
@@ -195,6 +231,42 @@ class ApiService {
         if (!res.ok) throw new Error(await res.text() || 'Account setup failed')
     }
 
+    /**
+     * Sends only the credential fields that changed (username and/or email).
+     * Calls the unified /update-credentials endpoint instead of the two separate
+     * /update-username and /update-email endpoints.
+     */
+    async updateCredentials(req: UpdateCredentialsRequest): Promise<void> {
+        if (!req.username && !req.email) return // nothing to do
+        const res = await fetch(`${API_BASE}/users/update-credentials`, {
+            method: 'PUT',
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(req),
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Failed to update credentials')
+    }
+
+    async updateProfile(req: UpdateProfileRequest): Promise<void> {
+        const res = await fetch(`${API_BASE}/users/update-profile`, {
+            method: 'PUT',
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(req),
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Failed to update profile')
+    }
+
+    async updatePreferences(req: UpdatePreferencesRequest): Promise<void> {
+        const res = await fetch(`${API_BASE}/users/update-preferences`, {
+            method: 'PUT',
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(req),
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Failed to update preferences')
+    }
+
     async getCurrentUser(): Promise<User> {
         try {
             const res = await fetchWithTimeout(`${API_BASE}/users/me`, {
@@ -208,7 +280,6 @@ class ApiService {
             throw err
         }
     }
-
 
     // FIX: logout is at /logout (Spring Security default), not /api/v1/logout
     async logout(): Promise<void> {
@@ -488,7 +559,38 @@ class ApiService {
             headers: csrfHeaders(),
             credentials: 'include',
         })
-        if (!res.ok) throw new Error(await res.text() || 'Failed to delete account')
+        if (!res.ok) {
+            const text = await res.text().catch(() => '')
+            if (res.status === 409) {
+                // Backend can use 409 when subscription cancellation fails.
+                throw new Error('SUBSCRIPTION_CANCEL_FAILED')
+            }
+            throw new Error(text || 'Failed to delete account')
+        }
+    }
+
+    async createCheckoutSession(plan: string): Promise<string> {
+        const res = await fetch(`${API_BASE}/payments/create-checkout-session`, {
+            method: 'POST',
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ plan }),
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Failed to create checkout session')
+        const data = await res.json()
+        return data.url
+    }
+
+    async createPortalSession(sessionId?: string): Promise<string> {
+        const res = await fetch(`${API_BASE}/payments/create-portal-session`, {
+            method: 'POST',
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ session_id: sessionId ?? '' }),
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Failed to create portal session')
+        const data = await res.json()
+        return data.url
     }
 }
 
