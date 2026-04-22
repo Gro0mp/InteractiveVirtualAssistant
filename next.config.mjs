@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
+const BACKEND = process.env.BACKEND_URL
 
 const nextConfig = {
-    distDir: './dist',
     async rewrites() {
         return [
             { source: '/api/:path*',    destination: `${BACKEND}/api/:path*` },
@@ -12,5 +12,4 @@ const nextConfig = {
     },
 }
 
-const BACKEND = process.env.BACKEND_URL
 export default nextConfig
