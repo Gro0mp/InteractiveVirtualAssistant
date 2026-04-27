@@ -7,7 +7,6 @@ function getApiBase(): string {
     return `${url}/api/v1`
 }
 
-// FIX: Spring Security's default CSRF cookie name is 'XSRF-TOKEN', not 'csrfToken'
 function getCookie(name: string): string | null {
     if (typeof document === 'undefined') return null
     const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
@@ -18,10 +17,9 @@ function csrfHeaders(extra?: HeadersInit): HeadersInit {
     const token = getCookie('XSRF-TOKEN')
     return {
         ...(extra ?? {}),
-        ...(token ? {'X-XSRF-TOKEN': token} : {}),
+        ...(token ? { 'X-XSRF-TOKEN': token } : {}),
     }
 }
-
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,29 +28,28 @@ export interface User {
     username: string
     email: string
     plan?: 'FREE' | 'BASIC' | 'PROFESSIONAL'
+    stripeSubscriptionStatus?: string | null
     avatar_url?: string
     last_login?: string
     setUpComplete: boolean
-    stripeSubscriptionStatus?: string | null
-
-    // Profile fields (set during account-setup / editable in settings)
     firstName?: string
     lastName?: string
     jobTitle?: string
     company?: string
     location?: string
-    goals?: string           // comma-separated goal keys
-    experienceLevel?: string // "JUNIOR" | "MID" | "SENIOR" | "LEAD"
-
+    goals?: string
+    experienceLevel?: string
     emailNotifications?: boolean
     weeklyDigest?: boolean
     interviewReminders?: boolean
 }
 
-/**
- * Used by the unified /update-credentials endpoint.
- * Send only the field(s) that changed — backend ignores nulls.
- */
+export interface Integration {
+    provider: 'github' | 'google'
+    connected: boolean
+    scope: string | null
+}
+
 export interface UpdateCredentialsRequest {
     username?: string
     email?: string
@@ -79,38 +76,62 @@ export interface AccountSetupRequest {
     lastName: string
     jobTitle: string
     company: string
-    experienceLevel: string        // "JUNIOR" | "MID" | "SENIOR" | "LEAD"
-    goals: string                  // comma-separated, e.g. "interview_prep,resume_review"
+    experienceLevel: string
+    goals: string
     emailNotifications: boolean
     weeklyDigest: boolean
     interviewReminders: boolean
 }
 
 export interface LoginRequest {
-    email: string;
-    password: string;
+    email: string
+    password: string
 }
 
 export interface SignUpRequest {
-    username: string;
-    email: string;
-    password: string;
+    username: string
+    email: string
+    password: string
 }
 
 export interface ChatHistoryListRequest {
-    userId: number;
+    userId: number
     tokenLimit?: number
 }
 
 export interface ChatHistoryListResponse {
-    role: 'USER' | 'ASSISTANT';
-    content: string;
+    role: 'USER' | 'ASSISTANT'
+    content: string
     createdAt: string
+}
+
+/**
+ * Mirrors the backend ChatResponse record.
+ * type: 'AUDIO' | 'DONE' | 'ERROR'
+ */
+export interface ChatStreamEvent {
+    type: 'AUDIO' | 'DONE' | 'ERROR'
+    responseMessage: string | null
+    audioUrl: string | null
+    expression: string | null
+    animation: string | null
+}
+
+/**
+ * Callback interface for sendChatMessage.
+ * onAudio fires for each sentence chunk with its text and optional TTS audio URL.
+ * onDone fires once when the stream ends normally.
+ * onError fires on ERROR events or network failures with an error code string.
+ */
+export interface ChatStreamCallbacks {
+    onAudio: (text: string, audioUrl: string | null) => void
+    onDone: () => void
+    onError: (code: string) => void
 }
 
 export interface InterviewSessionResponse {
     id: number
-    title: string // AI job description
+    title: string
     createdAt: string
     status: 'IN_PROGRESS' | 'COMPLETED' | string
     questionsAnswered: number
@@ -154,16 +175,13 @@ export interface InterviewFeedbackResponse {
     feedbackCreatedAt: string
 }
 
-// Represents a document stored against the user's account.
-// `content` holds the plain-text body so the resume uploader can pass it
-// directly into the interview setup without a second fetch.
 export interface UserDocument {
     id: number
     name: string
-    s3Key: string      // the unique identifier for the file in S3 (or your storage)
-    content?: string       // plain-text body — may be undefined if the backend omits it
-    uploadedAt?: string    // ISO date string
-    fileType?: string      // e.g. "pdf", "docx"
+    s3Key: string
+    content?: string
+    uploadedAt?: string
+    fileType?: string
     viewUrl?: string
 }
 
@@ -181,12 +199,11 @@ async function fetchWithTimeout(
     input: RequestInfo | URL,
     init: RequestInit & { timeoutMs?: number } = {},
 ): Promise<Response> {
-    const {timeoutMs = 8000, ...rest} = init
+    const { timeoutMs = 8000, ...rest } = init
     const controller = new AbortController()
     const t = setTimeout(() => controller.abort(), timeoutMs)
-
     try {
-        return await fetch(input, {...rest, signal: controller.signal})
+        return await fetch(input, { ...rest, signal: controller.signal })
     } finally {
         clearTimeout(t)
     }
@@ -199,7 +216,7 @@ class ApiService {
     async login(credentials: LoginRequest): Promise<User> {
         const res = await fetch(`${API_BASE}/users/login`, {
             method: 'POST',
-            headers: csrfHeaders({'Content-Type': 'application/json'}),
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(credentials),
             credentials: 'include',
         })
@@ -213,7 +230,7 @@ class ApiService {
     async signUp(userData: SignUpRequest): Promise<User> {
         const res = await fetch(`${API_BASE}/users/create-user`, {
             method: 'POST',
-            headers: csrfHeaders({'Content-Type': 'application/json'}),
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(userData),
             credentials: 'include',
         })
@@ -221,23 +238,56 @@ class ApiService {
         return res.json()
     }
 
+    /**
+     * GET /api/v1/integrations
+     * Returns connection status for all supported OAuth providers.
+     */
+    async getIntegrations(): Promise<Integration[]> {
+        const res = await fetch(`${API_BASE}/integrations`, {
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error(await res.text() || 'Failed to load integrations')
+        return res.json()
+    }
+
+    /**
+     * DELETE /api/v1/integrations/{provider}
+     * Unlinks the provider from the user's account.
+     * Throws with message "LAST_LOGIN_METHOD" if it would lock the user out.
+     */
+    async disconnectIntegration(provider: 'github' | 'google'): Promise<void> {
+        const res = await fetch(`${API_BASE}/integrations/${provider}`, {
+            method: 'DELETE',
+            headers: csrfHeaders(),
+            credentials: 'include',
+        })
+        if (res.status === 409) throw new Error('LAST_LOGIN_METHOD')
+        if (res.status === 404) throw new Error(`${provider} is not connected`)
+        if (!res.ok) throw new Error(await res.text() || 'Failed to disconnect integration')
+    }
+
+    /**
+     * Redirects the user to re-authorize / newly connect a provider.
+     * Use this both for "Connect" and "Reconnect" (e.g. to upgrade scopes).
+     */
+    connectIntegration(provider: 'github' | 'google', returnTo = '/assistant'): void {
+        const params = new URLSearchParams({ returnTo })
+        window.location.href =
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/oauth2/authorization/${provider}?${params}`
+    }
+
     async completeAccountSetup(req: AccountSetupRequest): Promise<void> {
         const res = await fetch(`${API_BASE}/users/complete-setup`, {
             method: 'POST',
-            headers: csrfHeaders({'Content-Type': 'application/json'}),
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(req),
             credentials: 'include',
         })
         if (!res.ok) throw new Error(await res.text() || 'Account setup failed')
     }
 
-    /**
-     * Sends only the credential fields that changed (username and/or email).
-     * Calls the unified /update-credentials endpoint instead of the two separate
-     * /update-username and /update-email endpoints.
-     */
     async updateCredentials(req: UpdateCredentialsRequest): Promise<void> {
-        if (!req.username && !req.email) return // nothing to do
+        if (!req.username && !req.email) return
         const res = await fetch(`${API_BASE}/users/update-credentials`, {
             method: 'PUT',
             headers: csrfHeaders({ 'Content-Type': 'application/json' }),
@@ -281,7 +331,6 @@ class ApiService {
         }
     }
 
-    // FIX: logout is at /logout (Spring Security default), not /api/v1/logout
     async logout(): Promise<void> {
         await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/logout`, {
             method: 'POST',
@@ -292,7 +341,7 @@ class ApiService {
 
     async getMessageHistory(req: ChatHistoryListRequest): Promise<ChatHistoryListResponse[]> {
         const params = req.tokenLimit != null ? `?tokenLimit=${req.tokenLimit}` : ''
-        const res = await fetch(`${API_BASE}/chat/user/${req.userId}${params}`, {credentials: 'include'})
+        const res = await fetch(`${API_BASE}/chat/user/${req.userId}${params}`, { credentials: 'include' })
         const data = await handleResponse<unknown[]>(res)
         if (!Array.isArray(data)) throw new Error('Unexpected response format')
         return data.map((m: any) => ({
@@ -311,10 +360,106 @@ class ApiService {
         if (!response.ok) throw new Error(await response.text() || 'Failed to delete chat history')
     }
 
+    /**
+     * Sends a chat message and streams the SSE response from POST /api/v1/chat/send.
+     *
+     * Why fetch + ReadableStream instead of native EventSource:
+     *   - EventSource is GET-only and cannot attach a request body or CSRF headers.
+     *   - fetch gives us full control over headers, credentials, and cancellation.
+     *
+     * Returns { abort } so the caller can cancel mid-stream, e.g. when the user
+     * sends a new message before the current one finishes.
+     */
+    sendChatMessage(
+        payload: { userMessage: string; userId: number; style?: string },
+        callbacks: ChatStreamCallbacks,
+    ): { abort: () => void } {
+        const controller = new AbortController()
+
+        const run = async () => {
+            let res: Response
+            try {
+                res = await fetch(`${API_BASE}/chat/send`, {
+                    method: 'POST',
+                    headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(payload),
+                    credentials: 'include',
+                    signal: controller.signal,
+                })
+            } catch (err: any) {
+                if (err?.name === 'AbortError') return // intentional cancel
+                callbacks.onError('NETWORK_ERROR')
+                return
+            }
+
+            if (!res.ok) {
+                if (res.status === 429) { callbacks.onError('RATE_LIMIT_EXCEEDED'); return }
+                if (res.status === 401) { callbacks.onError('UNAUTHENTICATED');     return }
+                callbacks.onError(`HTTP_${res.status}`)
+                return
+            }
+
+            // Read SSE stream line-by-line
+            const reader    = res.body!.getReader()
+            const decoder   = new TextDecoder()
+            let   buffer    = ''
+            let   eventType = ''
+
+            while (true) {
+                let done: boolean
+                let value: Uint8Array | undefined
+                try {
+                    ;({ done, value } = await reader.read())
+                } catch (err: any) {
+                    if (err?.name === 'AbortError') return
+                    callbacks.onError('STREAM_READ_ERROR')
+                    return
+                }
+
+                if (done) break
+
+                buffer += decoder.decode(value, { stream: true })
+
+                // SSE messages are separated by double newlines (\n\n)
+                const parts = buffer.split('\n\n')
+                buffer = parts.pop() ?? '' // last part may be incomplete
+
+                for (const part of parts) {
+                    for (const line of part.split('\n')) {
+                        if (line.startsWith('event:')) {
+                            eventType = line.slice(6).trim()
+                        } else if (line.startsWith('data:')) {
+                            const raw = line.slice(5).trim()
+                            try {
+                                const event = JSON.parse(raw) as ChatStreamEvent
+                                const type  = eventType || event.type
+                                if (type === 'AUDIO') {
+                                    callbacks.onAudio(event.responseMessage ?? '', event.audioUrl)
+                                } else if (type === 'DONE') {
+                                    callbacks.onDone()
+                                    return
+                                } else if (type === 'ERROR') {
+                                    callbacks.onError(event.responseMessage ?? 'UNKNOWN_ERROR')
+                                    return
+                                }
+                            } catch {
+                                console.warn('[api] SSE parse error, raw:', raw)
+                            }
+                            eventType = ''
+                        }
+                    }
+                }
+            }
+        }
+
+        void run()
+        return { abort: () => controller.abort() }
+    }
+
     async createInterviewSession(description: string, interviewLength: string, s3Key?: string): Promise<InterviewSessionResponse> {
         const res = await fetch(`${API_BASE}/interview/new-session`, {
             method: 'POST',
-            headers: csrfHeaders({'Content-Type': 'application/json'}),
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({
                 jobDescription: description,
                 resumeS3Key: s3Key ?? null,
@@ -359,7 +504,7 @@ class ApiService {
         const res = await fetch(`${API_BASE}/interview/get-sessions/`, {
             method: 'GET',
             headers: csrfHeaders(),
-            credentials: 'include'
+            credentials: 'include',
         })
         const data = await handleResponse<any[]>(res)
         return data.map(s => ({
@@ -388,8 +533,8 @@ class ApiService {
     async sendInterviewMessage(sessionId: number, userMessage: string): Promise<InterviewMessageResponse> {
         const res = await fetch(`${API_BASE}/interview/messages/${sessionId}/send`, {
             method: 'POST',
-            headers: csrfHeaders({'Content-Type': 'application/json'}),
-            body: JSON.stringify({sessionId, userMessage}),
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ sessionId, userMessage }),
             credentials: 'include',
         })
         if (!res.ok) {
@@ -408,7 +553,7 @@ class ApiService {
 
     async getInterviewMessages(sessionId: number): Promise<InterviewMessageHistoryListResponse[]> {
         const res = await fetch(`${API_BASE}/interview/messages/${sessionId}/history`, {
-            credentials: 'include'
+            credentials: 'include',
         })
         const data = await handleResponse<any[]>(res)
         return data.map(m => ({
@@ -424,14 +569,13 @@ class ApiService {
         const res = await fetch(`${API_BASE}/interview/feedback/${sessionId}`, {
             method: 'GET',
             headers: csrfHeaders(),
-            credentials: 'include'
+            credentials: 'include',
         })
-
         if (!res.ok) {
             if (res.status === 404) throw new Error('FEEDBACK_NOT_FOUND')
             throw new Error(await res.text() || 'Failed to get interview feedback')
         }
-        const data = await res.json();
+        const data = await res.json()
         return {
             sessionId: Number(data.sessionId ?? 0),
             sessionTitle: String(data.sessionTitle ?? ''),
@@ -458,10 +602,10 @@ class ApiService {
         const res = await fetch(`${API_BASE}/interview/feedback/all-feedback`, {
             method: 'GET',
             headers: csrfHeaders(),
-            credentials: 'include'
+            credentials: 'include',
         })
         if (!res.ok) throw new Error(await res.text() || 'Failed to get interview feedback for this user')
-        const data = await res.json();
+        const data = await res.json()
         if (!Array.isArray(data)) throw new Error('Unexpected response format')
         return data.map((item: any) => ({
             sessionId: Number(item.sessionId ?? 0),
@@ -485,8 +629,6 @@ class ApiService {
         }))
     }
 
-    // Returns all documents saved to the authenticated user's account.
-    // Adjust the field mapping below to match whatever your backend returns.
     async getUserDocuments(): Promise<UserDocument[]> {
         const res = await fetch(`${API_BASE}/documents/user-documents`, {
             method: 'GET',
@@ -494,8 +636,6 @@ class ApiService {
             credentials: 'include',
         })
         if (!res.ok) {
-            // Return empty array rather than throwing — the uploader handles the
-            // no-documents state gracefully without an error page.
             console.error('Failed to load documents:', await res.text().catch(() => ''))
             return []
         }
@@ -525,18 +665,13 @@ class ApiService {
         return res.text()
     }
 
-    // Delete document from database, the documents table and the vector table.
-    // Inside api.ts
     async deleteDocument(s3Key: string): Promise<void> {
-        // Correctly format the parameter into the URL string
-        const params = new URLSearchParams({s3Key});
-
+        const params = new URLSearchParams({ s3Key })
         const res = await fetch(`${API_BASE}/documents/delete?${params.toString()}`, {
             method: 'DELETE',
-            headers: csrfHeaders(), // No need for 'application/json' anymore
+            headers: csrfHeaders(),
             credentials: 'include',
         })
-
         if (!res.ok) throw new Error(await res.text() || 'Failed to delete document')
     }
 
@@ -561,10 +696,7 @@ class ApiService {
         })
         if (!res.ok) {
             const text = await res.text().catch(() => '')
-            if (res.status === 409) {
-                // Backend can use 409 when subscription cancellation fails.
-                throw new Error('SUBSCRIPTION_CANCEL_FAILED')
-            }
+            if (res.status === 409) throw new Error('SUBSCRIPTION_CANCEL_FAILED')
             throw new Error(text || 'Failed to delete account')
         }
     }

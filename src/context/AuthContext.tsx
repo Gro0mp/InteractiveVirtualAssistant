@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { api, type User } from '../services/api'
-import { wsClient } from '../services/ws'
 
 interface AuthContextType {
     user: User | null
@@ -62,7 +61,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     const logout = useCallback(() => {
         setUser(null)
         localStorage.removeItem('user')
-        wsClient.disconnect()
         // Call backend to invalidate the JSESSIONID session cookie.
         // Spring Security's logout endpoint is /logout (not /api/v1/logout).
         api.logout().catch(err => console.error('Server logout failed:', err))

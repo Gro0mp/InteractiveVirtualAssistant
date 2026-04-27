@@ -17,10 +17,12 @@ const navLinks = [
 export function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const { isAuthenticated, user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
 
     useEffect(() => {
+        setMounted(true);
         const handleScroll = () => setIsScrolled(window.scrollY > 12);
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
@@ -89,32 +91,36 @@ export function Navbar() {
                         {/* Theme toggle */}
                         <button
                             onClick={toggleTheme}
-                            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            aria-label={mounted && theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                             className="w-8 h-8 flex items-center justify-center border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-150"
                         >
-                            <AnimatePresence mode="wait" initial={false}>
-                                {theme === 'dark' ? (
-                                    <motion.span
-                                        key="sun"
-                                        initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
-                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                        exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
-                                        transition={{ duration: 0.15 }}
-                                    >
-                                        <Sun className="w-3.5 h-3.5" />
-                                    </motion.span>
-                                ) : (
-                                    <motion.span
-                                        key="moon"
-                                        initial={{ opacity: 0, rotate: 30, scale: 0.8 }}
-                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                        exit={{ opacity: 0, rotate: -30, scale: 0.8 }}
-                                        transition={{ duration: 0.15 }}
-                                    >
-                                        <Moon className="w-3.5 h-3.5" />
-                                    </motion.span>
-                                )}
-                            </AnimatePresence>
+                            {mounted ? (
+                                <AnimatePresence mode="wait" initial={false}>
+                                    {theme === 'dark' ? (
+                                        <motion.span
+                                            key="sun"
+                                            initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
+                                            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                            exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
+                                            transition={{ duration: 0.15 }}
+                                        >
+                                            <Sun className="w-3.5 h-3.5" />
+                                        </motion.span>
+                                    ) : (
+                                        <motion.span
+                                            key="moon"
+                                            initial={{ opacity: 0, rotate: 30, scale: 0.8 }}
+                                            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                            exit={{ opacity: 0, rotate: -30, scale: 0.8 }}
+                                            transition={{ duration: 0.15 }}
+                                        >
+                                            <Moon className="w-3.5 h-3.5" />
+                                        </motion.span>
+                                    )}
+                                </AnimatePresence>
+                            ) : (
+                                <div className="w-3.5 h-3.5" /> // Invisible placeholder to keep layout stable
+                            )}
                         </button>
 
                         {isAuthenticated ? (
@@ -143,20 +149,26 @@ export function Navbar() {
                     <div className="md:hidden flex items-center gap-2">
                         <button
                             onClick={toggleTheme}
-                            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            aria-label={mounted && theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                             className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
                         >
-                            <AnimatePresence mode="wait" initial={false}>
-                                {theme === 'dark' ? (
-                                    <motion.span key="sun" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                                        <Sun className="w-4 h-4" />
-                                    </motion.span>
-                                ) : (
-                                    <motion.span key="moon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
-                                        <Moon className="w-4 h-4" />
-                                    </motion.span>
-                                )}
-                            </AnimatePresence>
+                            {mounted ? (
+                                <AnimatePresence mode="wait" initial={false}>
+                                    {theme === 'dark' ? (
+                                        <motion.span key="sun" initial={{opacity: 0}} animate={{opacity: 1}}
+                                                     exit={{opacity: 0}} transition={{duration: 0.12}}>
+                                            <Sun className="w-4 h-4"/>
+                                        </motion.span>
+                                    ) : (
+                                        <motion.span key="moon" initial={{opacity: 0}} animate={{opacity: 1}}
+                                                     exit={{opacity: 0}} transition={{duration: 0.12}}>
+                                            <Moon className="w-4 h-4"/>
+                                        </motion.span>
+                                    )}
+                                </AnimatePresence>
+                            ) : (
+                                <div className="w-4 h-4"/> // Mobile size placeholder
+                            )}
                         </button>
                         <button
                             className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
@@ -165,7 +177,7 @@ export function Navbar() {
                             aria-controls="mobile-menu"
                             aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
                         >
-                            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                            {isMobileMenuOpen ? <X className="w-5 h-5"/> : <Menu className="w-5 h-5"/>}
                         </button>
                     </div>
                 </div>
@@ -176,10 +188,10 @@ export function Navbar() {
                 {isMobileMenuOpen && (
                     <motion.div
                         id="mobile-menu"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.18, ease: 'easeOut' }}
+                        initial={{opacity: 0, height: 0}}
+                        animate={{opacity: 1, height: 'auto'}}
+                        exit={{opacity: 0, height: 0}}
+                        transition={{duration: 0.18, ease: 'easeOut'}}
                         className="md:hidden bg-white dark:bg-black border-b border-neutral-200 dark:border-neutral-800 overflow-hidden"
                     >
                         <div className="px-5 pt-3 pb-6 space-y-1">

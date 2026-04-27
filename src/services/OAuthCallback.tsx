@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../context/AuthContext'
-import { api } from './api'
+import { api } from './api.ts'
 
 export function OAuthCallback() {
     const router = useRouter()
@@ -13,11 +13,14 @@ export function OAuthCallback() {
     useEffect(() => {
         if (searchParams.get('oauth') !== 'success') return
 
+        // Read returnTo BEFORE the async call so it's captured in the closure
+        const returnTo = searchParams.get('returnTo') ?? '/assistant'
+
         const handleOAuth = async () => {
             try {
                 const user = await api.getCurrentUser()
                 login(user)
-                router.replace('/assistant')
+                router.replace(returnTo)
             } catch {
                 router.replace('/login')
             }
